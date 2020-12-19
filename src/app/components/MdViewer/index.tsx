@@ -3,7 +3,6 @@ import marked from 'marked';
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components/macro';
-import keepTextLength from 'utils/keepTextLength';
 
 /**
  *
