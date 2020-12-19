@@ -22,3 +22,5 @@ yarn-error.log*
 generated-cra-app
 .cra-template-rb
 template
+
+.firebase
