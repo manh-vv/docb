@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useHistory } from 'react-router-dom';
-import styled from 'styled-components/macro';
 import getStorage from 'utils/getStorage';
 
 export function HomePage() {
