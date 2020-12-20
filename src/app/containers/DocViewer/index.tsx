@@ -51,6 +51,10 @@ export function DocViewer() {
         <title>DocViewer</title>
         <meta name="description" content="DocViewer" />
         <link rel="stylesheet" href="/css/bootstrap.min.css" />
+        <link
+          href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700"
+          rel="stylesheet"
+        ></link>
       </Helmet>
 
       <Container1>

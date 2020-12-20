@@ -8,8 +8,8 @@ import { docViewerActions } from './slice';
 function findHelper(a: any[] = [], itemId) {
   let menuItem = a.find(item => item.id === itemId);
   if (!menuItem) {
-    for (const { children } of a) {
-      menuItem = findHelper(children, itemId);
+    for (const { childItems } of a) {
+      menuItem = findHelper(childItems, itemId);
       if (menuItem) {
         break;
       }
@@ -72,7 +72,7 @@ export function* searchMdFileInGithubRepo(action) {
       id,
       text,
       type: 'branch',
-      children: [],
+      childItems: [],
     };
   }
   const payload: any[] = [];
@@ -103,10 +103,10 @@ export function* searchMdFileInGithubRepo(action) {
         if (!a.has(k)) {
           const item = createBranchMenuItem(k);
           a.set(k, item);
-          a.get(keys[i - 1]).children.push(item);
+          a.get(keys[i - 1]).childItems.push(item);
         }
       } else {
-        a.get(keys[i - 1]).children.push(createLeafMenuItem(c));
+        a.get(keys[i - 1]).childItems.push(createLeafMenuItem(c));
       }
     }
 

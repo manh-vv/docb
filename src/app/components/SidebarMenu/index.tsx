@@ -1,5 +1,4 @@
 import React, { memo, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import keepTextLength from 'utils/keepTextLength';
@@ -14,7 +13,7 @@ interface MenuItemProps {
   text: string;
   type: 'branch' | 'file';
   level?: number;
-  children?: MenuItemProps[];
+  childItems?: MenuItemProps[];
   /**
    * Git url: with this URL we can get the file content
    */
@@ -32,25 +31,20 @@ interface Props {
 }
 
 const MenuItemV = memo((props: MenuItemProps) => {
-  const { id, text, children, type, onSelect, href, level = 0 } = props;
-  const hasChildren = children && children.length > 0;
+  const { id, text, childItems, type, onSelect, href, level = 0 } = props;
+  const hasChildren = childItems && childItems.length > 0;
   const [showChildren, setShowChildren] = useState(false);
   function handleShowChildren(e) {
-    e.preventDefault();
-    setShowChildren(!showChildren);
+    if (type === 'branch') {
+      e.preventDefault();
+      setShowChildren(!showChildren);
+    }
   }
   return (
     <>
-      <MenuItem>
+      <MenuItem onClick={handleShowChildren} type={type}>
         {type === 'branch' ? (
-          <i
-            onClick={handleShowChildren}
-            style={{
-              cursor: 'pointer',
-            }}
-          >
-            {keepTextLength(text, '...')}
-          </i>
+          <i>{keepTextLength(text, '...')}</i>
         ) : type === 'file' ? (
           <Link to={href as string}>
             <b
@@ -69,12 +63,16 @@ const MenuItemV = memo((props: MenuItemProps) => {
 
         {hasChildren && <Svg onClick={handleShowChildren} showChildren={showChildren} />}
       </MenuItem>
-      {showChildren && <SidebarMenu menuItems={children} onSelect={onSelect} level={level + 1} />}
+      {showChildren && <SidebarMenu menuItems={childItems} onSelect={onSelect} level={level + 1} />}
     </>
   );
 });
 
-const MenuItem = styled.div`
+const MenuItem = styled(({ className, onClick, children }) => (
+  <div className={className} onClick={onClick}>
+    {children}
+  </div>
+))`
   display: flex;
   justify-content: space-between;
 
@@ -86,6 +84,8 @@ const MenuItem = styled.div`
   :hover {
     background-color: #ededed;
   }
+
+  cursor: ${({ type }) => type === 'branch' && 'pointer'};
 `;
 
 const MenuItemContent = styled.a`
@@ -125,24 +125,14 @@ const Svg = styled(({ className, onClick }) => (
 `;
 
 export const SidebarMenu = memo((props: Props) => {
-  const { menuItems, onSelect, level = 0 } = props;
+  const { menuItems = [], onSelect, level = 0 } = props;
 
   return (
-    <>
-      <Helmet>
-        <link
-          href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700"
-          rel="stylesheet"
-        ></link>
-      </Helmet>
-      {menuItems && (
-        <MenuContainer style={{ marginLeft: `${level}em` }}>
-          {menuItems.map(item => (
-            <MenuItemV {...item} key={item.id} onSelect={onSelect} level={level} />
-          ))}
-        </MenuContainer>
-      )}
-    </>
+    <MenuContainer style={{ marginLeft: `${level}em` }}>
+      {menuItems.map(item => (
+        <MenuItemV {...item} key={item.id} onSelect={onSelect} level={level} />
+      ))}
+    </MenuContainer>
   );
 });
 
