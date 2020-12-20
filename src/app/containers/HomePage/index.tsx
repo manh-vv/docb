@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useHistory } from 'react-router-dom';
 import getStorage from 'utils/getStorage';
@@ -7,6 +7,7 @@ export function HomePage() {
   const [username, setUsername] = useState<string>('');
   const provider = 'github';
   const history = useHistory();
+  const timeoutRef = useRef<any>();
 
   useEffect(() => {
     // get githup id from local storage
@@ -15,16 +16,26 @@ export function HomePage() {
       setUsername(lastUsername);
 
       if (getStorage().getItem('setting.askForOpenLast') !== 'disable') {
-        const confirm = window.confirm(`Open viewer for username: ${lastUsername}`);
-        if (confirm) {
-          openViewer(lastUsername);
-        }
+        timeoutRef.current = setTimeout(() => {
+          const confirm = window.confirm(`Open viewer for username: ${lastUsername}`);
+          if (confirm) {
+            openViewer(lastUsername);
+          }
+        }, 3000);
 
         getStorage().setItem('setting.askForOpenLast', 'disable');
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function onChangeUsername(e) {
+    setUsername(e.target.value);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  }
 
   function openViewer(username: string) {
     history.push(`/viewer/${provider}/${username}`);
@@ -42,7 +53,6 @@ export function HomePage() {
       <Helmet>
         <title>docb</title>
         <meta name="description" content="Docb book your MD files" />
-        <link rel="stylesheet" href="/css/bootstrap.min.css" />
       </Helmet>
 
       <div className="container">
@@ -58,13 +68,14 @@ export function HomePage() {
                   className="form-control"
                   id="id-input-github-id"
                   aria-describedby="github-id-help"
-                  onChange={v => setUsername(v.target.value)}
+                  onChange={onChangeUsername}
                   value={username}
                 />
                 <small id="github-id-help" className="form-text text-muted">
                   Click on your github profile and get your github id
                 </small>
               </div>
+
               {username && (
                 <button onClick={handleSubmit} className="btn btn-outline-primary">
                   View public repositories of <strong>{username}</strong>
