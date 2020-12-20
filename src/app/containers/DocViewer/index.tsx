@@ -1,4 +1,4 @@
-import { MdViewer } from 'app/components/MdViewer';
+import { MdViewer } from 'app/components/MdViewer/Loadable';
 import { SidebarMenu } from 'app/components/SidebarMenu/Loadable';
 import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -8,7 +8,7 @@ import { Link, useParams } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
-import { BookCollection } from '../BookCollection';
+import { BookCollection } from 'app/containers/BookCollection/Loadable';
 import { docViewerSaga } from './saga';
 import { selectDocViewer } from './selectors';
 import { reducer, sliceKey } from './slice';

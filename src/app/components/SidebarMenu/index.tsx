@@ -13,6 +13,7 @@ interface MenuItemProps {
   id: string;
   text: string;
   type: 'branch' | 'file';
+  level?: number;
   children?: MenuItemProps[];
   /**
    * Git url: with this URL we can get the file content
@@ -26,19 +27,24 @@ interface MenuItemProps {
 }
 interface Props {
   menuItems?: MenuItemProps[];
+  level?: number;
   onSelect?: Function;
 }
 
 const MenuItemV = memo((props: MenuItemProps) => {
-  const { id, text, children, type, onSelect, href } = props;
+  const { id, text, children, type, onSelect, href, level = 0 } = props;
   const hasChildren = children && children.length > 0;
   const [showChildren, setShowChildren] = useState(false);
+  function handleShowChildren(e) {
+    e.preventDefault();
+    setShowChildren(!showChildren);
+  }
   return (
     <>
       <MenuItem>
         {type === 'branch' ? (
           <i
-            onClick={() => setShowChildren(!showChildren)}
+            onClick={handleShowChildren}
             style={{
               cursor: 'pointer',
             }}
@@ -61,11 +67,9 @@ const MenuItemV = memo((props: MenuItemProps) => {
           </MenuItemContent>
         )}
 
-        {hasChildren && (
-          <Svg onClick={() => setShowChildren(!showChildren)} showChildren={showChildren} />
-        )}
+        {hasChildren && <Svg onClick={handleShowChildren} showChildren={showChildren} />}
       </MenuItem>
-      {showChildren && <SidebarMenu menuItems={children} onSelect={onSelect} />}
+      {showChildren && <SidebarMenu menuItems={children} onSelect={onSelect} level={level + 1} />}
     </>
   );
 });
@@ -121,7 +125,7 @@ const Svg = styled(({ className, onClick }) => (
 `;
 
 export const SidebarMenu = memo((props: Props) => {
-  const { menuItems, onSelect } = props;
+  const { menuItems, onSelect, level = 0 } = props;
 
   return (
     <>
@@ -132,9 +136,9 @@ export const SidebarMenu = memo((props: Props) => {
         ></link>
       </Helmet>
       {menuItems && (
-        <MenuContainer>
+        <MenuContainer style={{ marginLeft: `${level}em` }}>
           {menuItems.map(item => (
-            <MenuItemV {...item} key={item.id} onSelect={onSelect} />
+            <MenuItemV {...item} key={item.id} onSelect={onSelect} level={level} />
           ))}
         </MenuContainer>
       )}
