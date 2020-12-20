@@ -4,7 +4,6 @@
  *
  */
 import React, { memo } from 'react';
-import { useTranslation } from 'react-i18next';
 import styled from 'styled-components/macro';
 
 interface Props {
@@ -13,8 +12,6 @@ interface Props {
 }
 
 export const BookCollectionView = memo((props: Props) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { t, i18n } = useTranslation();
   const { item, onSelect } = props;
 
   return (

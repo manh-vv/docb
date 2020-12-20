@@ -1,10 +1,11 @@
+import sha256 from 'crypto-js/sha256';
 import getStorage from './getStorage';
 
 export default function fetchCache(input: string, init?: RequestInit) {
   let strOption = '';
 
   if (init) {
-    strOption = JSON.stringify(init);
+    strOption = sha256(JSON.stringify(init));
   }
 
   const key = `fetch-cache:${input}/${strOption}`;

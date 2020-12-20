@@ -1,6 +1,8 @@
 import { call, put, select, takeLatest } from 'redux-saga/effects';
 import fetchMdContent from 'utils/fetchMdContent';
+import getStorage from 'utils/getStorage';
 import githubApi from 'utils/githubApi';
+import sha256 from 'crypto-js/sha256';
 import { selectMenuItems } from './selectors';
 
 import { docViewerActions } from './slice';
@@ -33,6 +35,49 @@ export function* loadMdContent(action) {
   yield put({
     type: docViewerActions.content.type,
     payload: atob(content),
+  });
+
+  yield put({
+    type: 'CONVERT_MD_TO_HTML',
+    payload: atob(content),
+  });
+}
+
+function githupConverter(mdContent: string): Promise<string> {
+  const url = 'https://api.github.com/markdown';
+
+  const options: RequestInit = {
+    method: 'POST',
+    headers: {
+      Accept: 'application/vnd.github.v3+json',
+    },
+    body: JSON.stringify({
+      text: mdContent,
+    }),
+  };
+
+  const key = `fetch:${url}:${sha256(JSON.stringify(options))}`;
+
+  const data = getStorage(true).getItem(key);
+  if (data) {
+    return Promise.resolve(data);
+  }
+
+  return fetch(url, options)
+    .then(res => res.text())
+    .then(res => {
+      getStorage(true).setItem(key, res);
+      return res;
+    });
+}
+
+export function* convertMdToHtml(action) {
+  const { payload } = action;
+  const htmlContent = yield call(githupConverter, payload);
+
+  yield put({
+    type: docViewerActions.htmlContent.type,
+    payload: htmlContent,
   });
 }
 
@@ -165,4 +210,6 @@ export function* docViewerSaga() {
 
   yield takeLatest('FETCH_MD_CONTENT', loadMdContent);
   yield takeLatest('CLEAR_MD_CONTENT', clearMdContent);
+
+  yield takeLatest('CONVERT_MD_TO_HTML', convertMdToHtml);
 }

@@ -23,7 +23,7 @@ export function DocViewer() {
   useInjectReducer({ key: sliceKey, reducer: reducer });
   useInjectSaga({ key: sliceKey, saga: docViewerSaga });
 
-  const { content, menuItems = [], selectBook } = useSelector(selectDocViewer);
+  const { htmlContent, menuItems = [], selectBook } = useSelector(selectDocViewer);
   const dispatch = useDispatch();
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -50,7 +50,6 @@ export function DocViewer() {
       <Helmet>
         <title>DocViewer</title>
         <meta name="description" content="DocViewer" />
-        <link rel="stylesheet" href="/css/bootstrap.min.css" />
         <link
           href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700"
           rel="stylesheet"
@@ -86,8 +85,8 @@ export function DocViewer() {
           <Container3>
             <Content>
               {selectBook ? (
-                content ? (
-                  <MdViewer content={content} />
+                htmlContent ? (
+                  <MdViewer htmlContent={htmlContent} />
                 ) : (
                   <p>{selectBook.repository}</p>
                 )

@@ -5,7 +5,7 @@ import { MdViewer } from '..';
 
 describe('<MdViewer  />', () => {
   it('should match snapshot', () => {
-    const loadingIndicator = render(<MdViewer content={''} />);
+    const loadingIndicator = render(<MdViewer htmlContent={''} />);
     expect(loadingIndicator.container.firstChild).toMatchSnapshot();
   });
 });

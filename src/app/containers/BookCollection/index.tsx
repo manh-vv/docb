@@ -1,6 +1,5 @@
 import { BookCollectionView } from 'app/components/BookCollectionView';
 import React, { memo, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -27,13 +26,8 @@ export const BookCollection = memo((props: Props) => {
   useInjectReducer({ key: sliceKey, reducer: reducer });
   useInjectSaga({ key: sliceKey, saga: bookCollectionSaga });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const bookCollection = useSelector(selectBookCollection);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const dispatch = useDispatch();
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { t, i18n } = useTranslation();
 
   const { provider, username, onSelect } = props;
   const history = useHistory();

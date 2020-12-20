@@ -5,6 +5,7 @@ import { ContainerState } from './types';
 // The initial state of the DocViewer container
 export const initialState: ContainerState = {
   content: '',
+  htmlContent: '',
   menuItems: [],
   selectBook: null,
 };
@@ -17,6 +18,12 @@ const docViewerSlice = createSlice({
       return {
         ...state,
         content: action.payload,
+      };
+    },
+    htmlContent(state, action: PayloadAction<any>) {
+      return {
+        ...state,
+        htmlContent: action.payload,
       };
     },
     menuItems(state, action: PayloadAction<any>) {
