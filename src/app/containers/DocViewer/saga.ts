@@ -150,6 +150,11 @@ export function* closeBook(action) {
     type: docViewerActions.selectBook.type,
     payload,
   });
+  // reset menu items
+  yield put({
+    type: docViewerActions.menuItems.type,
+    payload: [],
+  });
 }
 
 export function* docViewerSaga() {
