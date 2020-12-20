@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useHistory } from 'react-router-dom';
 import styled from 'styled-components/macro';
+import getStorage from 'utils/getStorage';
 
 export function HomePage() {
   const [username, setUsername] = useState<string>('');
@@ -10,16 +11,18 @@ export function HomePage() {
 
   useEffect(() => {
     // get githup id from local storage
-    const username = window.localStorage.getItem(`${provider}/username`);
-    if (username) {
-      setUsername(username);
+    const lastUsername = getStorage(true).getItem(`${provider}/username`);
+    if (lastUsername) {
+      setUsername(lastUsername);
 
-      setTimeout(() => {
-        const confirm = window.confirm(`Open viewer for username: ${username}`);
+      if (getStorage().getItem('setting.askForOpenLast') !== 'disable') {
+        const confirm = window.confirm(`Open viewer for username: ${lastUsername}`);
         if (confirm) {
-          openViewer(username);
+          openViewer(lastUsername);
         }
-      }, 1000);
+
+        getStorage().setItem('setting.askForOpenLast', 'disable');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -31,7 +34,7 @@ export function HomePage() {
   function handleSubmit(e) {
     e.preventDefault();
 
-    window.localStorage.setItem(`${provider}/username`, username);
+    getStorage(true).setItem(`${provider}/username`, username);
     openViewer(username);
   }
 
@@ -75,13 +78,3 @@ export function HomePage() {
     </>
   );
 }
-
-/**
- * https://github.com/necolas/css3-social-signin-buttons/blob/gh-pages/auth-buttons.css
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const SignIn = styled(({ id, serviceName, className, href }) => (
-  <a className={`${className} btn-auth btn-${id} large`} href={href}>
-    Sign in with <b>{serviceName}</b>
-  </a>
-))``;

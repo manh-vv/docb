@@ -60,11 +60,21 @@ export function DocViewer() {
       <Container1>
         <Header>
           <section>
-            {provider} / <Link to={`/viewer/${provider}/${username}`}>{username}</Link> /{' '}
-            <Link to={`/viewer/${provider}/${username}/${repository}`}>{repository}</Link> /{' '}
-            <Link to={`/viewer/${provider}/${username}/${repository}/${base64FilePath}`}>
-              {base64FilePath}
-            </Link>
+            <Link to={`/`}>Home</Link>
+            {' / '}
+            {provider} / <Link to={`/viewer/${provider}/${username}`}>{username}</Link>
+            {' / '}
+            {repository && (
+              <>
+                <Link to={`/viewer/${provider}/${username}/${repository}`}>{repository}</Link>
+                {' / '}
+              </>
+            )}
+            {base64FilePath && (
+              <Link to={`/viewer/${provider}/${username}/${repository}/${base64FilePath}`}>
+                {base64FilePath}
+              </Link>
+            )}
           </section>
         </Header>
 
