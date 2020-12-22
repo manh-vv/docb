@@ -7,13 +7,20 @@ export const initialState: ContainerState = {
   content: '',
   htmlContent: '',
   menuItems: [],
-  selectBook: null,
+  selectedBook: null,
+  lastActiveMenuItem: null,
 };
 
 const docViewerSlice = createSlice({
   name: 'docViewer',
   initialState,
   reducers: {
+    selectedBook(state, action: PayloadAction<any>) {
+      return {
+        ...state,
+        selectedBook: action.payload,
+      };
+    },
     content(state, action: PayloadAction<any>) {
       return {
         ...state,
@@ -32,10 +39,10 @@ const docViewerSlice = createSlice({
         menuItems: action.payload || initialState.menuItems,
       };
     },
-    selectBook(state, action: PayloadAction<any>) {
+    lastActiveMenuItem(state, action: PayloadAction<any>) {
       return {
         ...state,
-        selectBook: action.payload,
+        lastActiveMenuItem: action.payload,
       };
     },
   },
