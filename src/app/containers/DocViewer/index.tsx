@@ -1,17 +1,17 @@
 import { MdViewer } from 'app/components/MdViewer/Loadable';
 import { SidebarMenu } from 'app/components/SidebarMenu/Loadable';
+import { BookCollection } from 'app/containers/BookCollection';
 import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
-import { BookCollection } from 'app/containers/BookCollection/Loadable';
 import { docViewerSaga } from './saga';
 import { selectDocViewer } from './selectors';
 import { reducer, sliceKey } from './slice';
+
 interface PathParams {
   provider: string;
   username: string;
@@ -23,11 +23,8 @@ export function DocViewer() {
   useInjectReducer({ key: sliceKey, reducer: reducer });
   useInjectSaga({ key: sliceKey, saga: docViewerSaga });
 
-  const { htmlContent, menuItems = [], selectBook } = useSelector(selectDocViewer);
+  const { htmlContent, menuItems = [] } = useSelector(selectDocViewer);
   const dispatch = useDispatch();
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { t, i18n } = useTranslation();
 
   const { provider, username, repository, base64FilePath } = useParams<PathParams>();
 
@@ -44,6 +41,19 @@ export function DocViewer() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider, username, repository, base64FilePath]);
+
+  function handleAfterRender() {
+    dispatch({
+      type: 'BUILD_MENU_FROM_MD_CONTENT',
+    });
+  }
+
+  function handleSelectMenu(payload) {
+    dispatch({
+      type: 'HANDLE_SELECT_MENU_ITEM',
+      payload,
+    });
+  }
 
   return (
     <>
@@ -79,16 +89,16 @@ export function DocViewer() {
 
         <Container2>
           <Menu>
-            <SidebarMenu menuItems={menuItems} />
+            <SidebarMenu menuItems={menuItems} onSelect={handleSelectMenu} />
           </Menu>
 
           <Container3>
             <Content>
-              {selectBook ? (
+              {repository ? (
                 htmlContent ? (
-                  <MdViewer htmlContent={htmlContent} />
+                  <MdViewer htmlContent={htmlContent} afterRender={handleAfterRender} />
                 ) : (
-                  <p>{selectBook.repository}</p>
+                  <p>{repository}</p>
                 )
               ) : (
                 <BookCollection {...{ provider, username }} />

@@ -1,7 +1,10 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect } from 'react';
 import styled from 'styled-components/macro';
+import NOPE_FN from 'utils/NOPE_FN';
+
 interface Props {
   htmlContent: string;
+  afterRender?: Function;
 }
 
 /**
@@ -9,7 +12,10 @@ interface Props {
  * on the screen
  */
 export const MdViewer = memo((props: Props) => {
-  const { htmlContent } = props;
+  const { htmlContent, afterRender = NOPE_FN } = props;
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => afterRender(), []);
 
   return <Paper dangerouslySetInnerHTML={{ __html: htmlContent }}></Paper>;
 });

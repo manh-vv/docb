@@ -3,9 +3,15 @@ export interface DocViewerState {
   content: string;
   htmlContent: string;
   menuItems: any[];
-  selectBook: {
+  selectedBook: {
+    provider: string;
     username: string;
-    repository: string;
+    repository?: string;
+    base64FilePath?: string;
+  } | null;
+  lastActiveMenuItem: {
+    menuItem: string;
+    index: number;
   } | null;
 }
 
