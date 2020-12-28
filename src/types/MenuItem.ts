@@ -1,7 +1,7 @@
 export interface MenuItem {
   id: string;
   text: string;
-  type: 'branch' | 'file';
+  type: 'branch' | 'file' | 'hash';
   order: number;
 
   /**
