@@ -277,6 +277,18 @@ export function* buildMenuFromMdContent() {
   });
 
   yield call([db.menuItems, 'bulkPut'], rs.concat(caMenuItem));
+
+  const menuItems: MenuItem[] = yield select(selectMenuItems);
+  const index: number = menuItems.findIndex(({ id }) => id === caMenuItem.id);
+
+  yield put(
+    docViewerActions.menuItems([
+      ...menuItems.slice(0, index),
+      { ...caMenuItem, active: true },
+      ...rs,
+      ...menuItems.slice(index + 1),
+    ]),
+  );
 }
 
 export function findChildItems(parentId: string): Promise<MenuItem[]> {
