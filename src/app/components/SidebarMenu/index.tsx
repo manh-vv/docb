@@ -50,8 +50,8 @@ const MenuItemView = memo((props: { menuItem: MenuItem; index: number; onClick?:
     style.cursor = 'pointer';
   }
 
-  if (active) {
-    style.borderBottom = '1px solid black';
+  if (active && !hasChildren) {
+    style.backgroundColor = '#ededed';
   }
 
   return (
@@ -95,16 +95,6 @@ const MenuItemDiv = styled.div`
 
 const MenuItemContent = styled.a`
   text-decoration: none;
-  color: rgb(50, 50, 159);
-
-  :focus {
-    outline: none;
-  }
-
-  :visited {
-    text-decoration: none;
-    color: rgb(50, 50, 159);
-  }
 `;
 
 const Svg = styled(Arrow)`

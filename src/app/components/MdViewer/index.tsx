@@ -1,8 +1,9 @@
-import React, { memo, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import styled from 'styled-components/macro';
 import NOPE_FN from 'utils/NOPE_FN';
 
 interface Props {
+  id: string;
   htmlContent: string;
   afterRender?: Function;
 }
@@ -11,14 +12,14 @@ interface Props {
  * this component response for getting MD content and interpret it
  * on the screen
  */
-export const MdViewer = memo((props: Props) => {
-  const { htmlContent, afterRender = NOPE_FN } = props;
+export const MdViewer = (props: Props) => {
+  const { id, htmlContent, afterRender = NOPE_FN } = props;
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => afterRender(), []);
+  useEffect(() => afterRender(), [htmlContent]);
 
-  return <Paper dangerouslySetInnerHTML={{ __html: htmlContent }}></Paper>;
-});
+  return <Paper id={id} dangerouslySetInnerHTML={{ __html: htmlContent }}></Paper>;
+};
 
 const Paper = styled.div`
   box-shadow: 0px 0px 6px 2px rgba(221, 221, 221, 1);

@@ -5,9 +5,9 @@ class MenuItemDatabase extends Dexie {
   public menuItems: Dexie.Table<MenuItem, string>;
 
   constructor() {
-    super('MenuItemDatabase');
+    super('menu-items-postfix');
     this.version(1).stores({
-      menuItems: 'id,level,active,parentId,childItems',
+      menuItems: 'id,type,level,active,parentId,childItems',
     });
     this.menuItems = this.table('menuItems');
   }

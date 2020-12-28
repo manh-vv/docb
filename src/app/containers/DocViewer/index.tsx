@@ -96,7 +96,11 @@ export function DocViewer() {
             <Content>
               {repository ? (
                 htmlContent ? (
-                  <MdViewer htmlContent={htmlContent} afterRender={handleAfterRender} />
+                  <MdViewer
+                    id="id-md-viewer"
+                    htmlContent={htmlContent}
+                    afterRender={handleAfterRender}
+                  />
                 ) : (
                   <p>{repository}</p>
                 )

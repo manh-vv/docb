@@ -8,7 +8,7 @@ import fetchMdContent from 'utils/fetchMdContent';
 import getStorage from 'utils/getStorage';
 import githubApi from 'utils/githubApi';
 
-import { selectLastActiveMenuItem, selectMenuItems } from './selectors';
+import { selectLastActiveMenuItem, selectMenuItems, selectSelectedBook } from './selectors';
 import { docViewerActions } from './slice';
 
 export function findMenuItemById(id: string): Promise<MenuItem> {
@@ -217,7 +217,67 @@ export function* closeBook() {
   });
 }
 
-export function* buildMenuFromMdContent() {}
+export function createMenuItemFromHTag(hTag: HTMLHeadingElement, index: number): MenuItem {
+  const aTag = hTag.getElementsByTagName('a')[0];
+
+  return {
+    id: aTag?.getAttribute('id') as string,
+    active: false,
+    level: +hTag.tagName.substr(1),
+    order: index,
+    text: hTag.innerText,
+    type: 'hash',
+    href: aTag?.getAttribute('href') as string,
+  };
+}
+
+export function* buildMenuFromMdContent() {
+  const elMd = document.getElementById('id-md-viewer');
+  const hTags = elMd?.querySelectorAll('h1,h2,h3,h4,h5,h6');
+  const rs: MenuItem[] = [];
+  const levelStack: MenuItem[] = [];
+  hTags?.forEach((hTag, key) => {
+    const menuItem = createMenuItemFromHTag(hTag as HTMLHeadingElement, key);
+    rs.push(menuItem);
+
+    let lastLowerLevelItem;
+    do {
+      lastLowerLevelItem = levelStack.pop();
+    } while (lastLowerLevelItem && lastLowerLevelItem.level >= menuItem.level);
+
+    if (lastLowerLevelItem) {
+      levelStack.push(lastLowerLevelItem);
+      if (!lastLowerLevelItem.childIds) {
+        lastLowerLevelItem.childIds = [];
+      }
+      lastLowerLevelItem.childIds.push(menuItem.id);
+      menuItem.parentId = lastLowerLevelItem.id;
+    }
+
+    levelStack.push(menuItem);
+  });
+
+  // update db
+  const { base64FilePath } = yield select(selectSelectedBook);
+  const caMenuItem: MenuItem = yield call(
+    findMenuItemById,
+    atob(decodeURIComponent(base64FilePath)),
+  );
+
+  rs.filter(({ level }) => level === 1).forEach(item => {
+    item.parentId = caMenuItem.id;
+    if (!caMenuItem.childIds) {
+      caMenuItem.childIds = [];
+    }
+    caMenuItem.childIds.push(item.id);
+  });
+
+  rs.forEach(item => {
+    item.level += caMenuItem.level;
+  });
+
+  yield call([db.menuItems, 'bulkPut'], rs.concat(caMenuItem));
+}
 
 export function findChildItems(parentId: string): Promise<MenuItem[]> {
   return db.menuItems.where('parentId').equals(parentId).toArray();
@@ -253,7 +313,7 @@ export function* handleSelectMenuItem(action) {
     return rs;
   });
 
-  if (menuItem.type === 'file') {
+  if (!hasChildren) {
     // active item only
     yield put(docViewerActions.menuItems(newMenuItems));
   } else if (active) {
