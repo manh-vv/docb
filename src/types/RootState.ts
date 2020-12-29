@@ -1,6 +1,7 @@
 import { DocViewerState } from 'app/containers/DocViewer/types';
 
 import { BookCollectionState } from 'app/containers/BookCollection/types';
+import { HomePageState } from 'app/containers/HomePage/types';
 // [IMPORT NEW CONTAINERSTATE ABOVE] < Needed for generating containers seamlessly
 
 /* 
@@ -10,5 +11,6 @@ import { BookCollectionState } from 'app/containers/BookCollection/types';
 export interface RootState {
   docViewer?: DocViewerState;
   bookCollection?: BookCollectionState;
+  homePage?: HomePageState;
   // [INSERT NEW REDUCER KEY ABOVE] < Needed for generating containers seamlessly
 }

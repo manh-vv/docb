@@ -4,28 +4,23 @@
  * This is the entry file for the application, only setup and boilerplate
  * code.
  */
-
+import './locales/i18n';
+import 'bootstrap/dist/css/bootstrap.css';
 import 'react-app-polyfill/ie11';
 import 'react-app-polyfill/stable';
-
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
-import * as serviceWorker from 'serviceWorker';
-
-// Use consistent styling
 import 'sanitize.css/sanitize.css';
 
-// Import root app
 import { App } from 'app';
-
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import { HelmetProvider } from 'react-helmet-async';
-
+import { Provider } from 'react-redux';
+import * as serviceWorker from 'serviceWorker';
 import { configureAppStore } from 'store/configureStore';
 
+// Use consistent styling
+// Import root app
 // Initialize languages
-import './locales/i18n';
-
 const store = configureAppStore();
 const MOUNT_NODE = document.getElementById('root') as HTMLElement;
 
