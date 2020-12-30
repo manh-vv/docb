@@ -47,6 +47,7 @@ const Div = styled.div`
   border: 1px solid black;
   position: relative;
   margin-bottom: 1em;
+  margin-left: 1.5em;
 
   .header {
     width: 90%;
