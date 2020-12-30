@@ -1,7 +1,7 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
 import githubApi from 'utils/githubApi';
 
-import { homePageActions } from './slice';
+import { homePageActions as actions } from './slice';
 
 export function* init() {
   // get users
@@ -10,9 +10,10 @@ export function* init() {
     [Promise, 'all'],
     users.map(user => githubApi(`/users/${user}`)),
   );
-  yield put(homePageActions.githubUsers(gUsers));
+
+  yield put(actions.githubUsers(gUsers));
 }
 
 export function* homePageSaga() {
-  yield takeLatest('INIT_HOME_PAGE', init);
+  yield takeLatest(actions.initHomePage.type, init);
 }
