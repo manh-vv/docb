@@ -1,7 +1,8 @@
 import { call, put, takeLatest } from 'redux-saga/effects';
+import { PER_PAGE } from 'utils/constants';
 import githubApi from 'utils/githubApi';
 
-import { bookCollectionActions } from './slice';
+import { bookCollectionActions as actions } from './slice';
 
 /**
  * Each repository is abook
@@ -10,16 +11,25 @@ import { bookCollectionActions } from './slice';
  */
 export function* fetchBookCollection(action) {
   const {
-    payload: { username },
+    payload: { username, nextPage, perPage },
   } = action;
-  const res = yield call(githubApi, `/users/${username}/repos`);
 
-  yield put({
-    type: bookCollectionActions.update.type,
-    payload: res,
-  });
+  const usp = new URLSearchParams();
+  const per_page = perPage || PER_PAGE;
+  usp.append('page', `${nextPage}`);
+  usp.append('per_page', `${per_page}`);
+
+  const res = yield call(githubApi, `/users/${username}/repos?${usp.toString()}`);
+
+  yield put(
+    actions.success({
+      curPage: nextPage,
+      perPage: per_page,
+      items: res,
+    }),
+  );
 }
 
 export function* bookCollectionSaga() {
-  yield takeLatest('FETCH_BOOK_COLLECTION', fetchBookCollection);
+  yield takeLatest(actions.fetchBookCollection, fetchBookCollection);
 }
