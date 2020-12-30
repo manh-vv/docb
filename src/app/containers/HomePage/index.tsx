@@ -104,7 +104,7 @@ export function HomePage() {
               <Card
                 key={u.id}
                 name={u.name}
-                desc={keepTextLength(u.bio, '...') || ' '}
+                desc={keepTextLength(u.bio || u.name, '...')}
                 img={u.avatar_url}
                 href={`/viewer/${provider}/${u.login}`}
               />

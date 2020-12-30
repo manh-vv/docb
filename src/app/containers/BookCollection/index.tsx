@@ -60,4 +60,6 @@ export const BookCollection = memo((props: Props) => {
 const Div = styled.div`
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 1em 1.5em 0 1.5em;
 `;
