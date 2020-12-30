@@ -11,7 +11,7 @@ import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
 import { homePageSaga } from './saga';
 import { selectGithubUsers } from './selectors';
-import { reducer, sliceKey } from './slice';
+import { homePageActions, reducer, sliceKey } from './slice';
 
 export function HomePage() {
   useInjectReducer({ key: sliceKey, reducer: reducer });
@@ -32,9 +32,7 @@ export function HomePage() {
       setUsername(lastUsername);
     }
 
-    dispatch({
-      type: 'INIT_HOME_PAGE',
-    });
+    dispatch(homePageActions.initHomePage());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

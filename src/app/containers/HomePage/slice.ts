@@ -12,11 +12,11 @@ const homePageSlice = createSlice({
   name: 'homePage',
   initialState,
   reducers: {
+    initHomePage(state) {
+      state.githubUsers = [];
+    },
     githubUsers(state, action: PayloadAction<any>) {
-      return {
-        ...state,
-        githubUsers: action.payload,
-      };
+      state.githubUsers = action.payload;
     },
   },
 });
