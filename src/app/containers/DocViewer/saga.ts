@@ -4,12 +4,12 @@ import db from 'store/db';
 import createBranch, { ROOT_ID } from 'types/createBranch';
 import createLeaf from 'types/createLeaf';
 import { MenuItem } from 'types/MenuItem';
-import fetchMdContent from 'utils/fetchMdContent';
+import fetchMdContentHelper from 'utils/fetchMdContent';
 import getStorage from 'utils/getStorage';
 import githubApi from 'utils/githubApi';
 
 import { selectLastActiveMenuItem, selectMenuItems, selectSelectedBook } from './selectors';
-import { docViewerActions } from './slice';
+import { docViewerActions as actions } from './slice';
 
 export function findMenuItemById(id: string): Promise<MenuItem> {
   return db.menuItems.get(id).then(rs => {
@@ -17,25 +17,25 @@ export function findMenuItemById(id: string): Promise<MenuItem> {
   });
 }
 
-export function* loadMdContent(action) {
+export function* fetchMdContent(action) {
   const {
     payload: { base64FilePath },
   } = action;
 
+  if (!base64FilePath) {
+    return;
+  }
+
   const path = atob(decodeURIComponent(base64FilePath));
   const menuItem = yield call(findMenuItemById, path);
 
-  const { content } = yield call(fetchMdContent, menuItem.url);
+  if (!menuItem) {
+    return;
+  }
 
-  yield put({
-    type: docViewerActions.content.type,
-    payload: atob(content),
-  });
+  const { content } = yield call(fetchMdContentHelper, menuItem.url);
 
-  yield put({
-    type: 'CONVERT_MD_TO_HTML',
-    payload: atob(content),
-  });
+  yield put(actions.convertMdToHtml(atob(content)));
 }
 
 function githupConverter(mdContent: string): Promise<string> {
@@ -70,17 +70,7 @@ export function* convertMdToHtml(action) {
   const { payload } = action;
   const htmlContent = yield call(githupConverter, payload);
 
-  yield put({
-    type: docViewerActions.htmlContent.type,
-    payload: htmlContent,
-  });
-}
-
-export function* clearMdContent() {
-  yield put({
-    type: docViewerActions.content.type,
-    payload: null,
-  });
+  yield put(actions.updateHtmlContent(htmlContent));
 }
 
 /**
@@ -149,7 +139,7 @@ export function createMenuItemFromFilePath(items: any[], prefixHref: string): Pr
  * - a repository is a book
  * - chapter is path of md file
  */
-export function* searchMdFileInGithubRepo(action) {
+export function* fetchBigChapter(action) {
   // if the menu items had been already filled then we can pass this action
   const menuItems = yield select(selectMenuItems);
   if (menuItems && menuItems.length) {
@@ -157,8 +147,10 @@ export function* searchMdFileInGithubRepo(action) {
   }
 
   const {
-    payload: { provider, username, repository },
+    payload: { provider, username, repository, base64FilePath },
+    payload,
   } = action;
+
   const usp = new URLSearchParams();
   usp.append('q', `extension:md repo:${username}/${repository}`);
 
@@ -166,55 +158,44 @@ export function* searchMdFileInGithubRepo(action) {
   const res = yield call(githubApi, `/search/code?${usp.toString()}`);
 
   // create menu items from file path and update local database
-  const payload = yield call(
+  const level0MenuItems: MenuItem[] = yield call(
     createMenuItemFromFilePath,
     res.items,
     `/viewer/${provider}/${username}/${repository}`,
   );
 
-  // UPDATE_BIG_CHAPTER
-  yield put({
-    type: docViewerActions.menuItems.type,
-    payload,
-  });
+  yield put(actions.updateMenuItems(level0MenuItems));
+
+  if (base64FilePath) {
+    yield put(actions.fetchMdContent(payload));
+  } else {
+    yield put(actions.updateHtmlContent(''));
+  }
 }
 
 export function* openBook(action) {
-  const { payload } = action;
+  const {
+    payload,
+    payload: { base64FilePath },
+  } = action;
 
-  yield put(docViewerActions.selectedBook(payload));
+  yield put(actions.updateSelectedBook(payload));
 
   // if the menu items had been already filled then we don't have to reload big chapters
   const menuItems = yield select(selectMenuItems);
-  if (!menuItems || !menuItems.length) {
-    yield put({
-      type: 'FETCH_BIG_CHAPTER',
-      payload,
-    });
-  }
-
-  if (action.payload.base64FilePath) {
-    yield put({
-      type: 'FETCH_MD_CONTENT',
-      payload: action.payload,
-    });
-    yield put({
-      type: 'RESTORE_LAST_ACTIVE_MENU_ITEMS',
-      payload: action.payload,
-    });
+  if (!(menuItems && menuItems.length)) {
+    yield put(actions.fetchBigChapter(payload));
   } else {
-    yield put({
-      type: 'CLEAR_MD_CONTENT',
-    });
+    if (base64FilePath) {
+      yield put(actions.fetchMdContent(payload));
+    } else {
+      yield put(actions.updateHtmlContent(''));
+    }
   }
 }
 
 export function* closeBook() {
-  // reset menu items
-  yield put({
-    type: docViewerActions.menuItems.type,
-    payload: [],
-  });
+  yield put(actions.updateMenuItems([]));
 }
 
 export function createMenuItemFromHTag(hTag: HTMLHeadingElement, index: number): MenuItem {
@@ -231,11 +212,26 @@ export function createMenuItemFromHTag(hTag: HTMLHeadingElement, index: number):
   };
 }
 
-export function* buildMenuFromMdContent() {
+export function* buildMenuItemsFromHtml() {
+  // find current big chapter
+  const selectedBook = yield select(selectSelectedBook);
+  const path = atob(decodeURIComponent(selectedBook.base64FilePath));
+  const activeChapter: MenuItem = yield findMenuItemById(path);
+  if (!activeChapter) {
+    throw new Error('menu items are not ready');
+  }
+
+  if (activeChapter.childIds && activeChapter.childIds.length) {
+    // don't need to rebuild menu items
+    return;
+  }
+
   const elMd = document.getElementById('id-md-viewer');
   const hTags = elMd?.querySelectorAll('h1,h2,h3,h4,h5,h6');
   const rs: MenuItem[] = [];
   const levelStack: MenuItem[] = [];
+  let smallestLevel = 6;
+
   hTags?.forEach((hTag, key) => {
     const menuItem = createMenuItemFromHTag(hTag as HTMLHeadingElement, key);
     rs.push(menuItem);
@@ -255,109 +251,92 @@ export function* buildMenuFromMdContent() {
     }
 
     levelStack.push(menuItem);
-  });
 
-  // update db
-  const { base64FilePath } = yield select(selectSelectedBook);
-  const caMenuItem: MenuItem = yield call(
-    findMenuItemById,
-    atob(decodeURIComponent(base64FilePath)),
-  );
-
-  rs.filter(({ level }) => level === 1).forEach(item => {
-    item.parentId = caMenuItem.id;
-    if (!caMenuItem.childIds) {
-      caMenuItem.childIds = [];
+    if (smallestLevel > menuItem.level) {
+      smallestLevel = menuItem.level;
     }
-    caMenuItem.childIds.push(item.id);
   });
 
-  rs.forEach(item => {
-    item.level += caMenuItem.level;
-  });
+  if (activeChapter) {
+    rs.filter(({ level }) => level === smallestLevel).forEach(item => {
+      if (!activeChapter.childIds) {
+        activeChapter.childIds = [];
+      } else {
+        activeChapter.childIds = [...activeChapter.childIds];
+      }
 
-  yield call([db.menuItems, 'bulkPut'], rs.concat(caMenuItem));
+      activeChapter.childIds.push(item.id);
+      item.parentId = activeChapter.id;
+    });
 
-  const menuItems: MenuItem[] = yield select(selectMenuItems);
-  const index: number = menuItems.findIndex(({ id }) => id === caMenuItem.id);
+    rs.forEach(item => {
+      item.level += activeChapter.level;
+    });
 
-  yield put(
-    docViewerActions.menuItems([
-      ...menuItems.slice(0, index),
-      { ...caMenuItem, active: true },
-      ...rs,
-      ...menuItems.slice(index + 1),
-    ]),
-  );
+    yield call([db.menuItems, 'bulkPut'], rs.concat(activeChapter));
+
+    const lastActiveMenuItem = yield select(selectLastActiveMenuItem);
+    if (
+      lastActiveMenuItem &&
+      lastActiveMenuItem.id === activeChapter.id &&
+      (!lastActiveMenuItem.childIds || !lastActiveMenuItem.childIds.length)
+    ) {
+      const updateMenuItem = { ...lastActiveMenuItem, childIds: activeChapter.childIds };
+      yield put(actions.updateMenuItem(updateMenuItem));
+
+      const childMenuItems = yield call(findChildItems, updateMenuItem.id);
+      yield put(
+        actions.showChildItems({
+          menuItem: updateMenuItem,
+          menuItems: childMenuItems,
+        }),
+      );
+    }
+  }
 }
 
 export function findChildItems(parentId: string): Promise<MenuItem[]> {
   return db.menuItems.where('parentId').equals(parentId).toArray();
 }
 
-export function* handleSelectMenuItem(action) {
-  const menuItem: MenuItem = action.payload.menuItem;
-  const lastActiveMenuItem = yield select(selectLastActiveMenuItem);
+export function* handleClickOnMenuItem(action) {
+  let { payload: menuItem } = action;
   const menuItems: MenuItem[] = yield select(selectMenuItems);
-  const index: number = action.payload.index || menuItems.findIndex(({ id }) => id === menuItem.id);
+  const index = menuItems.findIndex(({ id }) => id === menuItem.id);
+
+  if (index === -1) {
+    return;
+  }
+
+  const lastActiveMenuItem = yield select(selectLastActiveMenuItem);
+  if (lastActiveMenuItem && lastActiveMenuItem.index === index) {
+    return; // do nothing since click on the same item
+  }
+
   const hasChildren = menuItem.childIds && menuItem.childIds.length;
   const active = hasChildren ? !menuItem.active : true;
 
-  yield put(
-    docViewerActions.lastActiveMenuItem({
-      menuItem,
-      index,
-    }),
-  );
+  const updateMenuItem = { ...menuItem, active };
 
-  const newMenuItems = menuItems.map(m => {
-    let rs = m;
-    if (m.id === menuItem.id) {
-      rs = { ...m, active };
-    } else if (
-      lastActiveMenuItem &&
-      m.id === lastActiveMenuItem.menuItem.id &&
-      !lastActiveMenuItem.menuItem.childIds
-    ) {
-      rs = { ...m, active: false };
-    }
+  yield put(actions.updateMenuItem(updateMenuItem));
 
-    return rs;
-  });
-
-  if (!hasChildren) {
-    // active item only
-    yield put(docViewerActions.menuItems(newMenuItems));
-  } else if (active) {
-    if (hasChildren) {
+  if (hasChildren) {
+    if (active) {
       const childItems = yield call(findChildItems, menuItem.id);
 
       yield put(
-        docViewerActions.menuItems([
-          ...newMenuItems.slice(0, index + 1),
-          ...childItems,
-          ...newMenuItems.slice(index + 1),
-        ]),
+        actions.showChildItems({
+          menuItem: updateMenuItem,
+          menuItems: childItems,
+        }),
       );
     } else {
-      yield put(docViewerActions.menuItems(newMenuItems));
-    }
-  } else {
-    const set = new Set();
-    set.add(menuItem.id);
-
-    yield put(
-      docViewerActions.menuItems(
-        newMenuItems.filter(item => {
-          const flag = set.has(item.parentId);
-          if (flag) {
-            set.add(item.id);
-          }
-
-          return !flag;
+      yield put(
+        actions.hideChildItems({
+          menuItem: updateMenuItem,
         }),
-      ),
-    );
+      );
+    }
   }
 }
 
@@ -377,18 +356,17 @@ export function* restoreLastActiveMenuItems(action) {
 }
 
 export function* docViewerSaga() {
-  yield takeLatest('OPEN_BOOK', openBook);
-  yield takeLatest('CLOSE_BOOK', closeBook);
+  yield takeLatest(actions.openBook.type, openBook);
+  yield takeLatest(actions.closeBook.type, closeBook);
 
-  yield takeLatest('FETCH_BIG_CHAPTER', searchMdFileInGithubRepo);
+  yield takeLatest(actions.fetchBigChapter.type, fetchBigChapter);
 
-  yield takeLatest('FETCH_MD_CONTENT', loadMdContent);
-  yield takeLatest('CLEAR_MD_CONTENT', clearMdContent);
+  yield takeLatest(actions.fetchMdContent.type, fetchMdContent);
 
-  yield takeLatest('CONVERT_MD_TO_HTML', convertMdToHtml);
+  yield takeLatest(actions.convertMdToHtml.type, convertMdToHtml);
 
-  yield takeLatest('BUILD_MENU_FROM_MD_CONTENT', buildMenuFromMdContent);
-  yield takeEvery('HANDLE_SELECT_MENU_ITEM', handleSelectMenuItem);
+  yield takeLatest(actions.buildMenuItemsFromHtml.type, buildMenuItemsFromHtml);
+  yield takeEvery(actions.handleClickOnMenuItem.type, handleClickOnMenuItem);
 
-  yield takeLatest('RESTORE_LAST_ACTIVE_MENU_ITEMS', restoreLastActiveMenuItems);
+  yield takeLatest(actions.restoreLastActiveMenuItems.type, restoreLastActiveMenuItems);
 }

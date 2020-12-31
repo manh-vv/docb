@@ -9,8 +9,8 @@ import styled from 'styled-components/macro';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
 import { docViewerSaga } from './saga';
-import { selectDocViewer } from './selectors';
-import { reducer, sliceKey } from './slice';
+import { selectHtmlContent, selectMenuItems } from './selectors';
+import { docViewerActions as actions, reducer, sliceKey } from './slice';
 
 interface PathParams {
   provider: string;
@@ -18,41 +18,53 @@ interface PathParams {
   repository: string;
   base64FilePath: string;
 }
-
+/**
+ * Flow of loading:
+ * 1. Read params from URL
+ * - provider: github [gitlab]
+ * - username: organization or user
+ * - repository: repository name
+ * - base64FilePath: encodeURIComponent(btoa(filePath))
+ * 2. If the repository exists
+ * - Open a book
+ * - - updated selected book
+ * - - if the big-chapters (MD files) were not fetched then fetch big-chapters
+ * - - - build & update menu items after fetching big-chapters
+ * - - if base64FilePath exists then load MD content
+ * - - - update content view with HTML content
+ * - - else base64FilePath does not exist
+ * - - - clear md content
+ * 3. Else the repository is empty
+ * - Close the book
+ * 4. Handle event when a book is rendered
+ * 5. Hanlde event when a menu is picked
+ */
 export function DocViewer() {
   useInjectReducer({ key: sliceKey, reducer: reducer });
   useInjectSaga({ key: sliceKey, saga: docViewerSaga });
 
-  const { htmlContent, menuItems = [] } = useSelector(selectDocViewer);
+  const menuItems = useSelector(selectMenuItems);
+  const htmlContent = useSelector(selectHtmlContent);
+
   const dispatch = useDispatch();
 
   const { provider, username, repository, base64FilePath } = useParams<PathParams>();
 
   useEffect(() => {
     if (repository) {
-      dispatch({
-        type: 'OPEN_BOOK',
-        payload: { provider, username, repository, base64FilePath },
-      });
+      dispatch(actions.openBook({ provider, username, repository, base64FilePath }));
     } else {
-      dispatch({
-        type: 'CLOSE_BOOK',
-      });
+      dispatch(actions.closeBook());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider, username, repository, base64FilePath]);
 
   function handleAfterRender() {
-    dispatch({
-      type: 'BUILD_MENU_FROM_MD_CONTENT',
-    });
+    dispatch(actions.buildMenuItemsFromHtml());
   }
 
   function handleSelectMenu(payload) {
-    dispatch({
-      type: 'HANDLE_SELECT_MENU_ITEM',
-      payload,
-    });
+    dispatch(actions.handleClickOnMenuItem(payload.menuItem));
   }
 
   return (
