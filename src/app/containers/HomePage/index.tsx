@@ -98,9 +98,8 @@ export function HomePage() {
 
         <div className="row">
           {githubUsers.map(u => (
-            <div className="col-md-3 col-sm-12">
+            <div key={u.id} className="col-md-3 col-sm-12">
               <Card
-                key={u.id}
                 name={u.name}
                 desc={keepTextLength(u.bio || u.name, '...')}
                 img={u.avatar_url}
