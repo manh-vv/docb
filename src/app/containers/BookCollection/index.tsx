@@ -6,9 +6,16 @@ import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components/macro';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 import removeLastSlash from 'utils/removeLastSlash';
+import useQueryParams from 'utils/useQueryParams';
 
 import { bookCollectionSaga } from './saga';
-import { selectBookCollection, selectCurPage, selectHasBack, selectHasNext } from './selectors';
+import {
+  selectBookCollection,
+  selectCurPage,
+  selectHasBack,
+  selectHasNext,
+  selectTotalPage,
+} from './selectors';
 import { bookCollectionActions as actions, reducer, sliceKey } from './slice';
 
 interface Props {
@@ -25,15 +32,22 @@ export const BookCollection = memo((props: Props) => {
   const hasNext = useSelector(selectHasNext);
   const hasBack = useSelector(selectHasBack);
   const curPage = useSelector(selectCurPage);
+  const totalPage = useSelector(selectTotalPage);
 
   const dispatch = useDispatch();
 
   const { provider, username, onSelect } = props;
   const history = useHistory();
   const location = useLocation<Location>();
+  const usp = useQueryParams();
 
   useEffect(() => {
-    onNextPage();
+    const page = usp.get('page');
+    let nextPage = curPage;
+    if (page) {
+      nextPage = +page;
+    }
+    dispatch(actions.fetchBookCollection({ provider, username, nextPage }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider, username]);
 
@@ -42,11 +56,15 @@ export const BookCollection = memo((props: Props) => {
   }
 
   function onNextPage() {
-    dispatch(actions.fetchBookCollection({ provider, username, curPage: curPage + 1 }));
+    dispatch(actions.fetchBookCollection({ provider, username, nextPage: curPage + 1 }));
   }
 
   function onBackPage() {
-    dispatch(actions.fetchBookCollection({ provider, username, curPage: curPage - 1 }));
+    dispatch(actions.fetchBookCollection({ provider, username, nextPage: curPage - 1 }));
+  }
+
+  function onChoosePage(page) {
+    dispatch(actions.fetchBookCollection({ provider, username, nextPage: page }));
   }
 
   return (
@@ -68,10 +86,13 @@ export const BookCollection = memo((props: Props) => {
 
       <div className="d-flex justify-content-center">
         <Pagination
+          curPage={curPage}
+          totalPage={totalPage}
           hasNext={hasNext}
           hasBack={hasBack}
           onNextPage={onNextPage}
           onBackPage={onBackPage}
+          onChoosePage={onChoosePage}
         />
       </div>
     </div>
