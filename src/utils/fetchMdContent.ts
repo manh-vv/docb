@@ -4,8 +4,8 @@ export default function fetchMdContent(uri: string) {
   return fetchCache(uri, {
     method: 'GET',
     headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
+      Accept: 'application/vnd.github.v3.raw',
+      'Content-Type': 'text/plain',
     },
   });
 }
