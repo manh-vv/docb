@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import getStorage from 'utils/getStorage';
+import pageTitle from 'utils/pageTitle';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
 import { homePageSaga } from './saga';
@@ -62,8 +63,11 @@ export function HomePage() {
   return (
     <>
       <Helmet>
-        <title>docb</title>
-        <meta name="description" content="Docb book your MD files" />
+        <title>{pageTitle('Read GitHub repositories like books')}</title>
+        <meta
+          name="description"
+          content="Browse a GitHub user's repositories and read their markdown as a book"
+        />
       </Helmet>
 
       <AppHeader />

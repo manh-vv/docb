@@ -5,6 +5,7 @@ import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router';
 import styled from 'styled-components';
+import pageTitle from 'utils/pageTitle';
 
 import { P } from './P';
 
@@ -12,7 +13,7 @@ export function NotFoundPage() {
   return (
     <>
       <Helmet>
-        <title>404 Page Not Found</title>
+        <title>{pageTitle('404 Page Not Found')}</title>
         <meta name="description" content="Page not found" />
       </Helmet>
       <AppHeader />

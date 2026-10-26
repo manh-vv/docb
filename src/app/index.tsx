@@ -20,13 +20,7 @@ export function App() {
   const { i18n } = useTranslation();
   return (
     <BrowserRouter basename={removeLastSlash(import.meta.env.BASE_URL)}>
-      <Helmet
-        titleTemplate="%s - markdown reader"
-        defaultTitle="docb"
-        htmlAttributes={{ lang: i18n.language }}
-      >
-        <meta name="description" content="a markdown reader" />
-      </Helmet>
+      <Helmet htmlAttributes={{ lang: i18n.language }} />
 
       <Routes>
         <Route path="/" element={<HomePage />} />

@@ -9,9 +9,10 @@ import { Helmet } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useParams } from 'react-router';
 import styled from 'styled-components';
+import pageTitle from 'utils/pageTitle';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
-import { docViewerSaga } from './saga';
+import { decodeFilePath, docViewerSaga } from './saga';
 import {
   selectContentError,
   selectContentLoading,
@@ -100,6 +101,10 @@ export function DocViewer() {
   }
 
   const bookPath = `/viewer/${provider}/${username}`;
+  const filePath = decodeFilePath(base64FilePath);
+  const title = [filePath, repository ? `${username}/${repository}` : username]
+    .filter(Boolean)
+    .join(' | ');
   const book = { provider, username, repository: repository as string };
   const libraryLink = <Link to={bookPath}>Back to {username}</Link>;
 
@@ -166,8 +171,15 @@ export function DocViewer() {
   return (
     <>
       <Helmet>
-        <title>DocViewer</title>
-        <meta name="description" content="DocViewer" />
+        <title>{pageTitle(title)}</title>
+        <meta
+          name="description"
+          content={
+            repository
+              ? `Read the markdown in ${username}/${repository}`
+              : `Repositories of ${username}`
+          }
+        />
       </Helmet>
 
       <Shell>
@@ -175,9 +187,7 @@ export function DocViewer() {
           crumbs={[
             <Link to={bookPath}>{username}</Link>,
             repository && <Link to={`${bookPath}/${repository}`}>{repository}</Link>,
-            base64FilePath && (
-              <Link to={`${bookPath}/${repository}/${base64FilePath}`}>{base64FilePath}</Link>
-            ),
+            filePath && <Link to={`${bookPath}/${repository}/${base64FilePath}`}>{filePath}</Link>,
           ]}
         />
 
