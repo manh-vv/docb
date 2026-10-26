@@ -224,6 +224,18 @@ export function* fetchBigChapter(action) {
     repository,
   });
 
+  // a book opened without a chapter starts at its README, as on GitHub. Set before the menu,
+  // which ends the loading state, so the empty book page does not flash first.
+  const readme = mdFiles.find(({ path }) => /^readme\.md$/i.test(path));
+  if (readme) {
+    yield put(
+      actions.setReadme({
+        bookId: bookId({ provider, username, repository }),
+        base64FilePath: encodeURIComponent(encodeBase64Utf8(readme.path)),
+      }),
+    );
+  }
+
   yield put(actions.updateMenuItems(level0MenuItems));
   yield put(actions.setNoMarkdown(mdFiles.length === 0));
 

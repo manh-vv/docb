@@ -9,13 +9,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useLocation, useParams } from 'react-router';
+import { Link, Navigate, useLocation, useParams } from 'react-router';
 import styled from 'styled-components';
 import { compact, narrow } from 'styles/media';
 import pageTitle from 'utils/pageTitle';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
-import { decodeFilePath, docViewerSaga } from './saga';
+import { bookId, decodeFilePath, docViewerSaga } from './saga';
 import {
   selectContentError,
   selectContentLoading,
@@ -24,6 +24,7 @@ import {
   selectMenuItems,
   selectMenuLoading,
   selectNoMarkdown,
+  selectReadme,
 } from './selectors';
 import { docViewerActions as actions, reducer, sliceKey } from './slice';
 
@@ -48,7 +49,8 @@ interface PathParams {
  * - - if base64FilePath exists then load MD content
  * - - - update content view with HTML content
  * - - else base64FilePath does not exist
- * - - - clear md content
+ * - - - open the book's top-level README if it has one (the URL is replaced with its chapter)
+ * - - - else clear md content
  * 3. Else the repository is empty
  * - Close the book
  * 4. Handle event when a book is rendered
@@ -65,6 +67,7 @@ export function DocViewer() {
   const menuError = useSelector(selectMenuError);
   const contentError = useSelector(selectContentError);
   const noMarkdown = useSelector(selectNoMarkdown);
+  const readme = useSelector(selectReadme);
 
   const dispatch = useDispatch();
   const { hash } = useLocation();
@@ -158,7 +161,11 @@ export function DocViewer() {
         </LoadErrorMessage>
       );
     }
-    if (contentLoading || (menuLoading && base64FilePath)) {
+    // the README is scoped by book, so one left from the previous book is never followed
+    if (!base64FilePath && readme && readme.bookId === bookId(book)) {
+      return <Navigate replace to={`${bookPath}/${repository}/${readme.base64FilePath}`} />;
+    }
+    if (contentLoading || menuLoading) {
       return (
         <Article aria-busy="true">
           <LoadingLines lines={10} label="Loading chapter" />

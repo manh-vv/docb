@@ -11,6 +11,7 @@ export const selectContentLoading = createSelector(selectDocViewer, state => sta
 export const selectMenuError = createSelector(selectDocViewer, state => state.menuError);
 export const selectContentError = createSelector(selectDocViewer, state => state.contentError);
 export const selectNoMarkdown = createSelector(selectDocViewer, state => state.noMarkdown);
+export const selectReadme = createSelector(selectDocViewer, state => state.readme);
 export const selectSelectedBook = createSelector(selectDocViewer, state => state.selectedBook);
 export const selectLastActiveMenuItem = createSelector(
   selectDocViewer,

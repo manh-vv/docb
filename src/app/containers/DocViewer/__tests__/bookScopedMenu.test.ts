@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import createSagaMiddleware from 'redux-saga';
 import { MenuItem } from 'types/MenuItem';
+import { decodeBase64Utf8 } from 'utils/base64';
 
 import { docViewerSaga } from '../saga';
 import { docViewerActions as actions, reducer } from '../slice';
@@ -24,6 +25,8 @@ vi.mock('store/db', () => ({
 const trees: Record<string, string[]> = {
   docb: ['README.md', 'CLAUDE.md', 'a/docs/x.md', 'b/docs/y.md'],
   other: ['README.md', 'CHANGELOG.md'],
+  nested: ['docs/readme.md', 'notes.md'],
+  lowercase: ['Readme.md'],
 };
 vi.mock('utils/githubApi', () => ({
   default: async (path: string) => {
@@ -84,5 +87,33 @@ describe('book scoped menu items', () => {
     await expand('docs');
 
     expect(visible()).toEqual(['Introduction', 'a', 'docs', 'x.md', 'b']);
+  });
+});
+
+describe('the README chapter', () => {
+  const readmeOf = (store: ReturnType<typeof setup>['store']) => {
+    const readme = store.getState().docViewer.readme;
+    return (
+      readme && { ...readme, path: decodeBase64Utf8(decodeURIComponent(readme.base64FilePath)) }
+    );
+  };
+
+  it('is the top-level README of the open book', async () => {
+    const { store, open } = setup();
+
+    await open('docb');
+    expect(readmeOf(store)).toMatchObject({ bookId: 'github/u/docb', path: 'README.md' });
+
+    await open('lowercase');
+    expect(readmeOf(store)).toMatchObject({ bookId: 'github/u/lowercase', path: 'Readme.md' });
+  });
+
+  it('is unset for a book whose only README is in a folder', async () => {
+    const { store, open } = setup();
+
+    await open('docb');
+    await open('nested');
+
+    expect(readmeOf(store)).toBeUndefined();
   });
 });

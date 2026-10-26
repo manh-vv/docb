@@ -7,6 +7,7 @@ import {
   FetchBigChapter,
   FetchMdContent,
   HideChildItems,
+  Readme,
   SelectedBook,
   ShowChildItems,
 } from './types';
@@ -33,6 +34,7 @@ const docViewerSlice = createSlice({
       state.menuLoading = true;
       state.menuError = undefined;
       state.noMarkdown = false;
+      state.readme = undefined;
     },
     menuFailed(state, action: PayloadAction<LoadError>) {
       state.menuLoading = false;
@@ -40,6 +42,9 @@ const docViewerSlice = createSlice({
     },
     setNoMarkdown(state, action: PayloadAction<boolean>) {
       state.noMarkdown = action.payload;
+    },
+    setReadme(state, action: PayloadAction<Readme | undefined>) {
+      state.readme = action.payload;
     },
     fetchMdContent(state, action: PayloadAction<FetchMdContent>) {
       state.contentLoading = true;

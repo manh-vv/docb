@@ -38,6 +38,14 @@ export interface DocViewerState {
   contentError?: LoadError;
   /** the book has loaded and holds no markdown files */
   noMarkdown: boolean;
+  /** the book's top-level README, which opens when no chapter is chosen */
+  readme?: Readme;
+}
+
+export interface Readme {
+  /** the book it belongs to, see bookId in saga.ts */
+  bookId: string;
+  base64FilePath: string;
 }
 
 export type ContainerState = DocViewerState;
