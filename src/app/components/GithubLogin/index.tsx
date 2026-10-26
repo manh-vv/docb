@@ -16,6 +16,7 @@ import { signIn, signOut, useGithubAuth } from 'utils/githubAuth';
 import { HttpError } from 'utils/loadError';
 
 import { Modal } from '../Modal';
+import { TokenHelp } from './TokenHelp';
 
 const NEW_TOKEN_URL =
   'https://github.com/settings/personal-access-tokens/new?name=docb&description=Read%20markdown%20in%20docb&contents=read';
@@ -102,6 +103,10 @@ export const GithubLogin = memo(() => {
               Sign out
             </Primary>
             <Note>Signing out removes the token and the pages cached with it.</Note>
+            <TokenHelp>
+              Missing an organization&apos;s private repositories? This token may not cover it. Sign
+              out and sign in with one that does.
+            </TokenHelp>
           </>
         ) : (
           <form onSubmit={handleSubmit}>
@@ -146,6 +151,10 @@ export const GithubLogin = memo(() => {
               <FontAwesomeIcon icon={faLock} /> The token stays in this browser and is only sent to
               api.github.com.
             </Note>
+            <TokenHelp>
+              A fine-grained token reads one account. For an organization&apos;s private
+              repositories, set it as the token&apos;s resource owner or use a classic token.
+            </TokenHelp>
           </form>
         )}
       </Modal>
