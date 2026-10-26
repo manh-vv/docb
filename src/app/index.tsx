@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 import { GlobalStyle } from 'styles/global-styles';
 import removeLastSlash from 'utils/removeLastSlash';
 
+import { AboutLeaf } from './components/AboutLeaf';
 import { NotFoundPage } from './components/NotFoundPage/Loadable';
 import { DocViewer } from './containers/DocViewer/Loadable';
 import { HomePage } from './containers/HomePage/Loadable';
@@ -40,6 +41,7 @@ export function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <AboutLeaf />
       <GlobalStyle />
     </BrowserRouter>
   );
