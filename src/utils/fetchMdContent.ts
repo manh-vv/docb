@@ -1,4 +1,5 @@
 import fetchCache from './fetchCache';
+import { authHeaders } from './githubAuth';
 
 export default function fetchMdContent(uri: string) {
   return fetchCache(uri, {
@@ -6,6 +7,7 @@ export default function fetchMdContent(uri: string) {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
+      ...authHeaders(),
     },
   });
 }

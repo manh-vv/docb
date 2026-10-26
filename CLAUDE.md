@@ -72,7 +72,7 @@ Styles are styled-components plus Bootstrap 5.3 (grid, utilities, form controls,
 
 - `utils/githubApi` wraps `utils/fetchCache`, which caches successful JSON responses in **sessionStorage**, keyed by URL plus a sha256 of the request options. A non-2xx response is thrown as `HttpError` (status, GitHub's message, rate-limit reset time) and never cached. Sagas turn errors into a serializable `LoadError` (`toLoadError`: not-found, rate-limited, network, failed) in the slice, and `LoadErrorMessage` renders it with a retry.
 - The markdown-to-HTML conversion caches in **localStorage** instead (`githupConverter` in the DocViewer saga).
-- All GitHub calls are unauthenticated, so they are subject to GitHub's anonymous rate limits. The anonymous limit is 60 requests per hour per IP.
+- GitHub calls are anonymous unless the user signs in (`utils/githubAuth.ts`, `GithubLogin` in the header). Anonymous calls get 60 requests per hour per IP and only public repositories. GitHub's OAuth flows need a server to exchange the code for a token, so signing in means pasting a personal access token, kept in localStorage as `docb:github-auth`. `authHeaders()` adds it to `githubApi`, `fetchMdContent` and the markdown converter (whose cache key leaves the token out, since the HTML does not depend on it). Signed in users see their private repos in their own library (`/user/repos`). Sign in and sign out reload the page; sign out also clears the response caches and the Dexie table, which may hold private content.
 
 ### Tests
 

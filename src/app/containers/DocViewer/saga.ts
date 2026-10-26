@@ -7,6 +7,7 @@ import { MenuItem } from 'types/MenuItem';
 import { decodeBase64Utf8, encodeBase64Utf8 } from 'utils/base64';
 import fetchMdContentHelper from 'utils/fetchMdContent';
 import getStorage from 'utils/getStorage';
+import { authHeaders } from 'utils/githubAuth';
 import githubApi from 'utils/githubApi';
 import { HttpError, toLoadError } from 'utils/loadError';
 import { rewriteMarkdownLinks } from 'utils/rewriteMarkdownLinks';
@@ -94,7 +95,9 @@ function githupConverter(mdContent: string): Promise<string> {
     return Promise.resolve(data);
   }
 
-  return fetch(url, options).then(async res => {
+  // the HTML does not depend on who asks, so the token stays out of the cache key
+  const headers = { ...options.headers, ...authHeaders() };
+  return fetch(url, { ...options, headers }).then(async res => {
     if (!res.ok) {
       throw await HttpError.from(res);
     }

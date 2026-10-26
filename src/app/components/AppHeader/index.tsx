@@ -13,6 +13,7 @@ import styled from 'styled-components';
 import { compact, narrow } from 'styles/media';
 
 import { ColorModeSwitch } from '../ColorModeSwitch';
+import { GithubLogin } from '../GithubLogin';
 import { ThemePicker } from '../ThemePicker';
 
 interface Props {
@@ -46,6 +47,7 @@ export const AppHeader = memo(({ crumbs = [], actions }: Props) => {
 
       <Actions>
         {actions}
+        <GithubLogin />
         <ThemePicker />
         <ColorModeSwitch />
       </Actions>

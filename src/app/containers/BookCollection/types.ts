@@ -19,7 +19,7 @@ export interface FetchBookSuccess {
   curPage: number;
   perPage: number;
   items: any[];
-  /** public repositories of the account, when known */
+  /** repositories of the account the viewer can list, when known */
   repoCount?: number;
 }
 
