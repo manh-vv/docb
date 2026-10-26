@@ -3,10 +3,10 @@ import { LoadingLines } from 'app/components/Loading';
 import { MdViewer } from 'app/components/MdViewer/Loadable';
 import { SidebarMenu } from 'app/components/SidebarMenu/Loadable';
 import { BookCollection } from 'app/containers/BookCollection';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useParams } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import styled from 'styled-components';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
@@ -56,6 +56,8 @@ export function DocViewer() {
   const contentLoading = useSelector(selectContentLoading);
 
   const dispatch = useDispatch();
+  const { hash } = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
 
   const {
     provider = '',
@@ -75,6 +77,15 @@ export function DocViewer() {
 
   function handleAfterRender() {
     dispatch(actions.buildMenuItemsFromHtml());
+
+    // A new chapter starts at its top, or at the heading the link pointed to. The browser
+    // cannot do this itself because the content arrives after the navigation.
+    const target = hash && document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (target) {
+      target.scrollIntoView({ block: 'start', behavior: 'instant' });
+    } else {
+      mainRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    }
   }
 
   function handleSelectMenu(payload) {
@@ -114,7 +125,7 @@ export function DocViewer() {
               )}
             </Sidebar>
 
-            <Main>
+            <Main ref={mainRef}>
               {contentLoading ? (
                 <Article aria-busy="true">
                   <LoadingLines lines={10} label="Loading chapter" />

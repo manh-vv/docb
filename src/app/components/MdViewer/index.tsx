@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import NOPE_FN from 'utils/NOPE_FN';
 
@@ -14,11 +15,24 @@ interface Props {
  */
 export const MdViewer = (props: Props) => {
   const { id, htmlContent, afterRender = NOPE_FN } = props;
+  const navigate = useNavigate();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => afterRender(), [htmlContent]);
 
-  return <Paper id={id} dangerouslySetInnerHTML={{ __html: htmlContent }}></Paper>;
+  // links to other chapters carry their router path (see utils/rewriteMarkdownLinks)
+  function handleClick(e: React.MouseEvent) {
+    const link = (e.target as Element).closest('a[data-route]');
+    if (!link || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+      return;
+    }
+    e.preventDefault();
+    navigate(link.getAttribute('data-route') as string);
+  }
+
+  return (
+    <Paper id={id} onClick={handleClick} dangerouslySetInnerHTML={{ __html: htmlContent }}></Paper>
+  );
 };
 
 /** Typography for the HTML that GitHub's markdown API returns */

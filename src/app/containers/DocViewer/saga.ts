@@ -7,6 +7,7 @@ import { MenuItem } from 'types/MenuItem';
 import fetchMdContentHelper from 'utils/fetchMdContent';
 import getStorage from 'utils/getStorage';
 import githubApi from 'utils/githubApi';
+import { rewriteMarkdownLinks } from 'utils/rewriteMarkdownLinks';
 
 import { selectLastActiveMenuItem, selectMenuItems, selectSelectedBook } from './selectors';
 import { docViewerActions as actions } from './slice';
@@ -107,6 +108,12 @@ export function* convertMdToHtml(action) {
     htmlContent = yield call(githupConverter, payload);
   } catch {
     // leave the reader empty rather than stuck loading
+  }
+
+  const book = yield select(selectSelectedBook);
+  const path = decodeFilePath(book?.base64FilePath);
+  if (htmlContent && book?.repository && path) {
+    htmlContent = rewriteMarkdownLinks(htmlContent, { ...book, path });
   }
 
   yield put(actions.updateHtmlContent(htmlContent));
