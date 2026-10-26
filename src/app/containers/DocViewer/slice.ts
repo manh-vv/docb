@@ -37,7 +37,12 @@ const docViewerSlice = createSlice({
       } = action;
 
       const index = state.menuItems.findIndex(item => item.id === menuItem.id);
-      if (index === -1) {
+      if (index === -1 || !state.menuItems[index].active) {
+        return;
+      }
+
+      // Children are already shown, e.g. the chapter's headings were attached twice
+      if (state.menuItems[index + 1]?.parentId === menuItem.id) {
         return;
       }
 

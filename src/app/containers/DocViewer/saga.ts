@@ -1,5 +1,5 @@
 import sha256 from 'crypto-js/sha256';
-import { call, put, select, takeEvery, takeLatest } from 'redux-saga/effects';
+import { actionChannel, call, fork, put, select, take, takeLatest } from 'redux-saga/effects';
 import db from 'store/db';
 import createBranch, { ROOT_ID } from 'types/createBranch';
 import createLeaf from 'types/createLeaf';
@@ -154,7 +154,6 @@ export function* fetchBigChapter(action) {
   const usp = new URLSearchParams();
   usp.append('q', `extension:md repo:${username}/${repository}`);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const res = yield call(githubApi, `/search/code?${usp.toString()}`);
 
   // create menu items from file path and update local database
@@ -300,20 +299,20 @@ export function findChildItems(parentId: string): Promise<MenuItem[]> {
 }
 
 export function* handleClickOnMenuItem(action) {
-  let { payload: menuItem } = action;
   const menuItems: MenuItem[] = yield select(selectMenuItems);
-  const index = menuItems.findIndex(({ id }) => id === menuItem.id);
+  // The payload is the item as it was rendered when clicked, which can be stale by the time
+  // earlier clicks have been handled, so toggle from the item currently in the store
+  const menuItem = menuItems.find(({ id }) => id === action.payload.id);
 
-  if (index === -1) {
+  if (!menuItem) {
     return;
   }
 
-  const lastActiveMenuItem = yield select(selectLastActiveMenuItem);
-  if (lastActiveMenuItem && lastActiveMenuItem.index === index) {
+  const hasChildren = menuItem.childIds && menuItem.childIds.length;
+  if (!hasChildren && menuItem.active) {
     return; // do nothing since click on the same item
   }
 
-  const hasChildren = menuItem.childIds && menuItem.childIds.length;
   const active = hasChildren ? !menuItem.active : true;
 
   const updateMenuItem = { ...menuItem, active };
@@ -337,6 +336,18 @@ export function* handleClickOnMenuItem(action) {
         }),
       );
     }
+  }
+}
+
+/**
+ * Clicks are handled one at a time: expanding a branch waits on IndexedDB, and a click handled
+ * in the meantime would toggle the branch back while its children are still on their way.
+ */
+export function* watchClickOnMenuItem() {
+  const clicks = yield actionChannel(actions.handleClickOnMenuItem.type);
+  while (true) {
+    const action = yield take(clicks);
+    yield call(handleClickOnMenuItem, action);
   }
 }
 
@@ -366,7 +377,7 @@ export function* docViewerSaga() {
   yield takeLatest(actions.convertMdToHtml.type, convertMdToHtml);
 
   yield takeLatest(actions.buildMenuItemsFromHtml.type, buildMenuItemsFromHtml);
-  yield takeEvery(actions.handleClickOnMenuItem.type, handleClickOnMenuItem);
+  yield fork(watchClickOnMenuItem);
 
   yield takeLatest(actions.restoreLastActiveMenuItems.type, restoreLastActiveMenuItems);
 }
