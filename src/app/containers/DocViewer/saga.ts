@@ -64,6 +64,8 @@ export function* fetchMdContent(action) {
     return;
   }
 
+  yield call(revealChapter, menuItem);
+
   try {
     const { content } = yield call(fetchMdContentHelper, menuItem.url);
     yield put(actions.convertMdToHtml(decodeBase64Utf8(content)));
@@ -364,6 +366,39 @@ export function* buildMenuItemsFromHtml() {
           menuItems: childMenuItems,
         }),
       );
+    }
+  }
+}
+
+/**
+ * Expand the folders above a chapter and mark it active, as clicking it in the sidebar would,
+ * so a chapter opened from a link, a deep link or history is visible in the sidebar
+ */
+export function* revealChapter(chapter: MenuItem) {
+  const ancestors: MenuItem[] = [];
+  for (let id = chapter.parentId; id;) {
+    const parent: MenuItem | undefined = yield call(findMenuItemById, id);
+    if (!parent) {
+      break;
+    }
+    ancestors.unshift(parent);
+    id = parent.parentId;
+  }
+
+  for (const item of [...ancestors, chapter]) {
+    const menuItems: MenuItem[] = yield select(selectMenuItems);
+    const shown = menuItems.find(({ id }) => id === item.id);
+    if (!shown) {
+      return; // the menu is not ready for this book
+    }
+    if (shown.active) {
+      continue;
+    }
+    const expanded = { ...shown, active: true };
+    yield put(actions.updateMenuItem(expanded));
+    if (expanded.type === 'branch') {
+      const children = yield call(findChildItems, expanded.id);
+      yield put(actions.showChildItems({ menuItem: expanded, menuItems: children }));
     }
   }
 }

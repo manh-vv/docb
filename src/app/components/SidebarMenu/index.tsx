@@ -7,7 +7,7 @@ import {
   faHashtag,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import React, { memo } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router';
 import styled, { css } from 'styled-components';
 import { ROOT_ID } from 'types/createBranch';
@@ -59,6 +59,13 @@ const MenuItemView = memo((props: ItemProps) => {
   const hasChildren = !!childIds && childIds.length > 0;
   const current = type === 'file' ? isOpenChapter : active && !hasChildren;
 
+  const rowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isOpenChapter) {
+      rowRef.current?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [isOpenChapter]);
+
   function handleOnClick(e) {
     if (onClick) {
       if (type === 'branch') {
@@ -83,6 +90,7 @@ const MenuItemView = memo((props: ItemProps) => {
 
   return (
     <Row
+      ref={rowRef}
       onClick={handleOnClick}
       style={{ paddingLeft: `${12 + level * 14}px` }}
       $current={current}
