@@ -63,6 +63,10 @@ Menu tree storage is split in two:
 
 All books share the one Dexie table, so menu item ids are scoped by book: `github/user/repo:path/to/file.md` for files and folders (folders by full path), `github/user/repo:@introduction` for the root branch, and `<chapter id>#<anchor id>` for headings (`bookId` / `chapterId` in the saga). `openBook` reloads the menu whenever the book changes, not only when it is empty. Changing the id scheme needs a Dexie version bump that clears the table (see `store/db.ts`).
 
+### Styling
+
+Styles are styled-components plus Bootstrap 5.3 (grid, utilities, form controls, placeholders). Colors, fonts, radii and shadows are CSS variables (`--db-*`) defined in `src/styles/global-styles.ts`; components read only those tokens, never literal colors, so color modes and themes just redefine the variables. Fonts (Inter for UI, Source Serif 4 for reading, JetBrains Mono for code) load from Google Fonts in `index.html`. `MdViewer` holds the typography for the HTML GitHub's markdown API returns, and `AppHeader` is the shared top bar (breadcrumb `crumbs`, `actions` slot on the right).
+
 ### Caching and GitHub access
 
 - `utils/githubApi` wraps `utils/fetchCache`, which caches successful JSON responses in **sessionStorage**, keyed by URL plus a sha256 of the request options. Error responses (e.g. rate limits) are returned but not cached.

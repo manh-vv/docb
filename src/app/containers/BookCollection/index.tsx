@@ -71,26 +71,12 @@ export const BookCollection = memo((props: Props) => {
   }
 
   return (
-    <div className="container-fluid">
-      <div className="row">
-        <div className="col">
-          <Div aria-busy={loading}>
-            {loading && <span className="visually-hidden">Loading books</span>}
-            {loading && Array.from({ length: 12 }, (_, i) => <BookPlaceholder key={i} />)}
-            {!loading &&
-              bookCollection.total > 0 &&
-              bookCollection.items.map(item => (
-                <BookCollectionView
-                  key={item.id}
-                  item={item}
-                  onSelect={onSelect || handleOnSelect}
-                />
-              ))}
-          </Div>
+    <Page>
+      <Header>
+        <div>
+          <Eyebrow>Library</Eyebrow>
+          <Heading>{username}</Heading>
         </div>
-      </div>
-
-      <div className="d-flex justify-content-center">
         <Pagination
           curPage={curPage}
           totalPage={totalPage}
@@ -100,20 +86,60 @@ export const BookCollection = memo((props: Props) => {
           onBackPage={onBackPage}
           onChoosePage={onChoosePage}
         />
-      </div>
-    </div>
+      </Header>
+
+      <Grid aria-busy={loading}>
+        {loading && <span className="visually-hidden">Loading books</span>}
+        {loading && Array.from({ length: 12 }, (_, i) => <BookPlaceholder key={i} />)}
+        {!loading &&
+          bookCollection.total > 0 &&
+          bookCollection.items.map(item => (
+            <BookCollectionView key={item.id} item={item} onSelect={onSelect || handleOnSelect} />
+          ))}
+      </Grid>
+    </Page>
   );
 });
 
-const BookPlaceholder = styled(LoadingBox)`
-  width: 160px;
-  height: 240px;
-  margin-bottom: 1em;
-  margin-left: 1.5em;
+const Page = styled.div`
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 28px 72px;
 `;
 
-const Div = styled.div`
+const Header = styled.div`
   display: flex;
   flex-wrap: wrap;
-  padding: 1em 1.5em 0 1.5em;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+`;
+
+const Eyebrow = styled.p`
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--db-text-muted);
+`;
+
+const Heading = styled.h1`
+  margin: 0;
+  font-family: var(--db-font-reading);
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--db-heading);
+`;
+
+const BookPlaceholder = styled(LoadingBox)`
+  height: 252px;
+`;
+
+const Grid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
 `;

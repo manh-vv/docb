@@ -1,3 +1,4 @@
+import { AppHeader } from 'app/components/AppHeader';
 import { LoadingLines } from 'app/components/Loading';
 import { MdViewer } from 'app/components/MdViewer/Loadable';
 import { SidebarMenu } from 'app/components/SidebarMenu/Loadable';
@@ -80,123 +81,131 @@ export function DocViewer() {
     dispatch(actions.handleClickOnMenuItem(payload.menuItem));
   }
 
+  const bookPath = `/viewer/${provider}/${username}`;
+
   return (
     <>
       <Helmet>
         <title>DocViewer</title>
         <meta name="description" content="DocViewer" />
-        <link
-          href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700"
-          rel="stylesheet"
-        ></link>
       </Helmet>
 
-      <Container1>
-        <Header>
-          <section>
-            <Link to={`/`}>Home</Link>
-            {' / '}
-            {provider} / <Link to={`/viewer/${provider}/${username}`}>{username}</Link>
-            {' / '}
-            {repository && (
-              <>
-                <Link to={`/viewer/${provider}/${username}/${repository}`}>{repository}</Link>
-                {' / '}
-              </>
-            )}
-            {base64FilePath && (
-              <Link to={`/viewer/${provider}/${username}/${repository}/${base64FilePath}`}>
-                {base64FilePath}
-              </Link>
-            )}
-          </section>
-        </Header>
+      <Shell>
+        <AppHeader
+          crumbs={[
+            <Link to={bookPath}>{username}</Link>,
+            repository && <Link to={`${bookPath}/${repository}`}>{repository}</Link>,
+            base64FilePath && (
+              <Link to={`${bookPath}/${repository}/${base64FilePath}`}>{base64FilePath}</Link>
+            ),
+          ]}
+        />
 
-        <Container2>
-          <Menu aria-busy={menuLoading}>
-            {menuLoading ? (
-              <MenuPlaceholder>
-                <LoadingLines lines={6} label="Loading files" />
-              </MenuPlaceholder>
-            ) : (
-              <SidebarMenu menuItems={menuItems} onSelect={handleSelectMenu} />
-            )}
-          </Menu>
+        {repository ? (
+          <Body>
+            <Sidebar aria-label="Contents" aria-busy={menuLoading}>
+              <SidebarTitle>Contents</SidebarTitle>
+              {menuLoading ? (
+                <MenuPlaceholder>
+                  <LoadingLines lines={6} label="Loading files" />
+                </MenuPlaceholder>
+              ) : (
+                <SidebarMenu menuItems={menuItems} onSelect={handleSelectMenu} />
+              )}
+            </Sidebar>
 
-          <Container3>
-            <Content>
-              {repository ? (
-                contentLoading ? (
-                  <ContentPlaceholder aria-busy="true">
-                    <LoadingLines lines={10} label="Loading chapter" />
-                  </ContentPlaceholder>
-                ) : htmlContent ? (
+            <Main>
+              {contentLoading ? (
+                <Article aria-busy="true">
+                  <LoadingLines lines={10} label="Loading chapter" />
+                </Article>
+              ) : htmlContent ? (
+                <Article>
                   <MdViewer
                     id="id-md-viewer"
                     htmlContent={htmlContent}
                     afterRender={handleAfterRender}
                   />
-                ) : (
-                  <p>{repository}</p>
-                )
+                </Article>
               ) : (
-                <BookCollection {...{ provider, username }} />
+                <Empty>
+                  <EmptyTitle>{repository}</EmptyTitle>
+                  <p>Choose a chapter from the contents to start reading.</p>
+                </Empty>
               )}
-            </Content>
-            <Footer></Footer>
-          </Container3>
-        </Container2>
-      </Container1>
+            </Main>
+          </Body>
+        ) : (
+          <LibraryMain>
+            <BookCollection {...{ provider, username }} />
+          </LibraryMain>
+        )}
+      </Shell>
     </>
   );
 }
 
-const Container1 = styled.div``;
-
-const Header = styled.header`
-  position: sticky;
-  top: 0;
-  height: 60px;
-  border-bottom: 1px solid #ddd;
-`;
-
-const Container2 = styled.div`
-  position: fixed;
-  top: 60px;
-  height: calc(100vh - 60px);
-  width: 100%;
+const Shell = styled.div`
   display: flex;
+  flex-direction: column;
+  height: 100vh;
 `;
 
-const Menu = styled.div`
-  flex-basis: 20%;
-  border-right: 1px solid #ddd;
-  overflow: auto;
+const Body = styled.div`
+  display: grid;
+  grid-template-columns: var(--db-sidebar-width) minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+`;
+
+const Sidebar = styled.aside`
+  overflow-y: auto;
+  padding: 18px 0 32px;
+  border-right: 1px solid var(--db-border);
+  background: var(--db-surface-muted);
+`;
+
+const SidebarTitle = styled.h2`
+  margin: 0 20px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--db-text-muted);
 `;
 
 const MenuPlaceholder = styled.div`
-  padding: 12.5px 20px;
+  padding: 10px 20px;
 `;
 
-const ContentPlaceholder = styled.div`
-  max-width: 800px;
-  margin: 1.5em 2em 1em 2.5em;
-  padding: 2em 1.2em 1.2em 1.6em;
+const Main = styled.main`
+  overflow-y: auto;
+  scroll-behavior: smooth;
 `;
 
-const Container3 = styled.div`
-  flex-basis: 80%;
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
+const LibraryMain = styled.main`
+  flex: 1;
+  overflow-y: auto;
 `;
 
-const Content = styled.div`
-  flex: 1 0 auto;
-  overflow: auto;
+const Article = styled.article`
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 56px 48px 96px;
 `;
 
-const Footer = styled.div`
-  flex: 0 0 50px;
-  border-top: 1px solid #ddd;
+const Empty = styled.div`
+  max-width: 520px;
+  margin: 18vh auto 0;
+  padding: 0 24px;
+  text-align: center;
+  color: var(--db-text-muted);
+`;
+
+const EmptyTitle = styled.h1`
+  margin: 0 0 8px;
+  font-family: var(--db-font-reading);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--db-heading);
 `;

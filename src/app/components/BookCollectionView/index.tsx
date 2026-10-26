@@ -1,8 +1,7 @@
-import { faFish } from '@fortawesome/free-solid-svg-icons';
+import { faCodeBranch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { memo } from 'react';
 import styled from 'styled-components';
-import keepTextLength from 'utils/keepTextLength';
 
 interface BookItem {
   provider: string;
@@ -18,6 +17,15 @@ interface Props {
   onSelect?: Function;
 }
 
+/** A stable hue per repository, so each book keeps its cover color */
+function coverHue(name: string): number {
+  let hash = 0;
+  for (const char of name) {
+    hash = (hash * 31 + char.charCodeAt(0)) % 360;
+  }
+  return hash;
+}
+
 export const BookCollectionView = memo((props: Props) => {
   const { item, onSelect } = props;
 
@@ -29,73 +37,117 @@ export const BookCollectionView = memo((props: Props) => {
   }
 
   return (
-    <Div>
-      <div className="header">{keepTextLength(`DOCB: ${item.owner.login}`, '...', 48)}</div>
-      <div className="title">{keepTextLength(item.name, '...', 15)}</div>
-      <div className="desc">{keepTextLength(item.description, '...', 100) || item.name}</div>
-      <div className="default-branch">{item.default_branch}</div>
-      <button className="btn btn-outline-primary btn-sm open-button" onClick={handleClick}>
-        <FontAwesomeIcon icon={faFish} />
-      </button>
-    </Div>
+    <Book type="button" onClick={handleClick} className="open-button" title={item.name}>
+      <Cover style={{ '--hue': coverHue(item.name) } as React.CSSProperties} aria-hidden="true">
+        <span>{item.name.charAt(0)}</span>
+      </Cover>
+      <Body>
+        <Title className="title">{item.name}</Title>
+        <Desc>{item.description || 'No description'}</Desc>
+        <Branch>
+          <FontAwesomeIcon icon={faCodeBranch} /> {item.default_branch}
+        </Branch>
+      </Body>
+    </Book>
   );
 });
 
-const Div = styled.div`
-  width: 160px;
-  height: 240px;
-  border: 1px solid black;
+const Book = styled.button`
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid var(--db-border);
+  border-radius: var(--db-radius-lg);
+  background: var(--db-surface);
+  box-shadow: var(--db-shadow-sm);
+  color: var(--db-text);
+  transition:
+    transform 0.2s var(--db-ease),
+    box-shadow 0.2s var(--db-ease),
+    border-color 0.2s var(--db-ease);
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: var(--db-border-strong);
+    box-shadow: var(--db-shadow-lg);
+  }
+`;
+
+const Cover = styled.div`
   position: relative;
-  margin-bottom: 1em;
-  margin-left: 1.5em;
+  display: flex;
+  align-items: flex-end;
+  height: 112px;
+  padding: 14px 16px;
+  background:
+    radial-gradient(
+      120% 90% at 100% 0%,
+      hsl(calc(var(--hue) + 40) 70% 62% / 0.85),
+      transparent 60%
+    ),
+    linear-gradient(140deg, hsl(var(--hue) 55% 46%), hsl(calc(var(--hue) + 25) 60% 34%));
 
-  .header {
-    width: 90%;
-    margin: auto;
-    height: 1.5em;
-    background-color: #212121;
-    font-size: 8px;
-    color: white;
-    margin-bottom: 1em;
-    padding-left: 5px;
-  }
-
-  .title {
-    font-family: 'Shadows Into Light', cursive;
-    text-align: center;
-    text-transform: capitalize;
-    font-size: 1.5em;
-    color: #ff5722;
-  }
-
-  .desc {
-    background-color: #1a237e;
-    color: white;
-    font-size: 10px;
-    padding: 5px;
+  /* the spine of the book */
+  &::before {
+    content: '';
     position: absolute;
-    bottom: 50px;
-    height: 80px;
-    width: 100%;
-    left: 0;
+    inset: 0 auto 0 10px;
+    width: 2px;
+    background: rgb(255 255 255 / 0.22);
   }
 
-  .open-button {
-    position: absolute;
-    bottom: 5px;
-    right: 5px;
+  span {
+    font-family: var(--db-font-reading);
+    font-size: 44px;
+    font-weight: 600;
+    line-height: 1;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.92);
   }
+`;
 
-  .default-branch {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    font-size: 8px;
-    font-style: italic;
-    color: #ff5722;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 6em;
-  }
+const Body = styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px 16px;
+`;
+
+const Title = styled.div`
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--db-heading);
+`;
+
+const Desc = styled.p`
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  min-height: calc(3 * 1.45em);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--db-text-muted);
+`;
+
+const Branch = styled.span`
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: var(--db-font-mono);
+  font-size: 11.5px;
+  color: var(--db-text-muted);
+  background: var(--db-surface-muted);
 `;

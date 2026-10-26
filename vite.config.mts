@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import { copyFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, Plugin } from 'vite';
-import svgr from 'vite-plugin-svgr';
 
 const srcDir = fileURLToPath(new URL('./src', import.meta.url));
 const outDir = 'build';
@@ -31,7 +30,7 @@ function spaFallback(): Plugin {
 export default defineConfig({
   // Served as a GitHub Pages project site: https://manh-vv.github.io/docb/
   base: '/docb/',
-  plugins: [react(), svgr(), spaFallback()],
+  plugins: [react(), spaFallback()],
   resolve: {
     alias: srcAliases,
   },
