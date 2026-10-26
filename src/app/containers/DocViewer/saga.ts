@@ -4,6 +4,7 @@ import db from 'store/db';
 import createBranch, { ROOT_ID } from 'types/createBranch';
 import createLeaf from 'types/createLeaf';
 import { MenuItem } from 'types/MenuItem';
+import { decodeBase64Utf8, encodeBase64Utf8 } from 'utils/base64';
 import fetchMdContentHelper from 'utils/fetchMdContent';
 import getStorage from 'utils/getStorage';
 import githubApi from 'utils/githubApi';
@@ -40,7 +41,7 @@ export function decodeFilePath(base64FilePath?: string): string | undefined {
     return undefined;
   }
   try {
-    return atob(decodeURIComponent(base64FilePath));
+    return decodeBase64Utf8(decodeURIComponent(base64FilePath));
   } catch {
     return undefined;
   }
@@ -65,7 +66,7 @@ export function* fetchMdContent(action) {
 
   try {
     const { content } = yield call(fetchMdContentHelper, menuItem.url);
-    yield put(actions.convertMdToHtml(atob(content)));
+    yield put(actions.convertMdToHtml(decodeBase64Utf8(content)));
   } catch (error) {
     yield put(actions.contentFailed(toLoadError(error)));
   }
@@ -157,7 +158,7 @@ export function createMenuItemFromFilePath(items: any[], book: Book): Promise<Me
 
         const mi = createLeaf(chapterId(book, path), name);
         mi.url = git_url;
-        mi.href = `${prefixHref}/${encodeURIComponent(btoa(path))}`;
+        mi.href = `${prefixHref}/${encodeURIComponent(encodeBase64Utf8(path))}`;
 
         const parent = map.get(parentId) as MenuItem;
         parent.childIds?.push(mi.id);

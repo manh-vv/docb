@@ -1,3 +1,4 @@
+import { encodeBase64Utf8 } from './base64';
 import removeLastSlash from './removeLastSlash';
 
 export interface ChapterLocation {
@@ -66,15 +67,11 @@ export function rewriteMarkdownLinks(html: string, at: ChapterLocation): string 
     const target = resolveRepoPath(at.path, safeDecode(pathPart.split('?')[0]));
 
     if (/\.md$/i.test(target)) {
-      try {
-        const hash = fragment ? `#${anchor(safeDecode(fragment))}` : '';
-        const route = `/viewer/${at.provider}/${repo}/${encodeURIComponent(btoa(target))}${hash}`;
-        a.setAttribute('href', `${basename}${route}`);
-        a.setAttribute('data-route', route);
-        return;
-      } catch {
-        // btoa only takes Latin-1 paths; fall back to the file on GitHub
-      }
+      const hash = fragment ? `#${anchor(safeDecode(fragment))}` : '';
+      const route = `/viewer/${at.provider}/${repo}/${encodeURIComponent(encodeBase64Utf8(target))}${hash}`;
+      a.setAttribute('href', `${basename}${route}`);
+      a.setAttribute('data-route', route);
+      return;
     }
 
     a.setAttribute('href', `https://github.com/${repo}/blob/HEAD/${encodePath(target)}`);

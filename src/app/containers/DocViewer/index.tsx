@@ -39,7 +39,7 @@ interface PathParams {
  * - provider: github [gitlab]
  * - username: organization or user
  * - repository: repository name
- * - base64FilePath: encodeURIComponent(btoa(filePath))
+ * - base64FilePath: encodeURIComponent(base64 of the UTF-8 file path), see utils/base64
  * 2. If the repository exists
  * - Open a book
  * - - updated selected book
