@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
+import { compact } from 'styles/media';
 import NOPE_FN from 'utils/NOPE_FN';
 
 interface Props {
@@ -42,6 +43,11 @@ const Paper = styled.div`
   line-height: 1.75;
   color: var(--db-text);
   overflow-wrap: break-word;
+
+  @media ${compact} {
+    font-size: 17px;
+    line-height: 1.7;
+  }
 
   > :first-child,
   > .markdown-heading:first-child > :first-child {
@@ -109,6 +115,13 @@ const Paper = styled.div`
 
   .markdown-heading:hover .anchor {
     opacity: 1;
+  }
+
+  /* no room for the hover mark beside headings on phones; the anchor stays as a scroll target */
+  @media ${compact} {
+    .anchor::before {
+      content: none;
+    }
   }
 
   p,

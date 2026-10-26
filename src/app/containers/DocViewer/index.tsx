@@ -4,11 +4,14 @@ import { LoadingLines } from 'app/components/Loading';
 import { MdViewer } from 'app/components/MdViewer/Loadable';
 import { SidebarMenu } from 'app/components/SidebarMenu/Loadable';
 import { BookCollection } from 'app/containers/BookCollection';
-import React, { useEffect, useRef } from 'react';
+import { faListUl } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useParams } from 'react-router';
 import styled from 'styled-components';
+import { compact, narrow } from 'styles/media';
 import pageTitle from 'utils/pageTitle';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
@@ -66,6 +69,23 @@ export function DocViewer() {
   const dispatch = useDispatch();
   const { hash } = useLocation();
   const mainRef = useRef<HTMLElement>(null);
+  // the contents drawer on narrow screens
+  const [contentsOpen, setContentsOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!contentsOpen) {
+      return;
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setContentsOpen(false);
+        toggleRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [contentsOpen]);
 
   const {
     provider = '',
@@ -98,6 +118,10 @@ export function DocViewer() {
 
   function handleSelectMenu(payload) {
     dispatch(actions.handleClickOnMenuItem(payload.menuItem));
+    // picking a chapter or heading closes the drawer; folders just expand
+    if (payload.menuItem.type !== 'branch') {
+      setContentsOpen(false);
+    }
   }
 
   const bookPath = `/viewer/${provider}/${username}`;
@@ -189,11 +213,31 @@ export function DocViewer() {
             repository && <Link to={`${bookPath}/${repository}`}>{repository}</Link>,
             filePath && <Link to={`${bookPath}/${repository}/${base64FilePath}`}>{filePath}</Link>,
           ]}
+          actions={
+            repository && (
+              <ContentsToggle
+                ref={toggleRef}
+                type="button"
+                aria-label="Contents"
+                aria-controls="docb-contents"
+                aria-expanded={contentsOpen}
+                onClick={() => setContentsOpen(open => !open)}
+              >
+                <FontAwesomeIcon icon={faListUl} fixedWidth />
+              </ContentsToggle>
+            )
+          }
         />
 
         {repository ? (
           <Body>
-            <Sidebar aria-label="Contents" aria-busy={menuLoading}>
+            {contentsOpen && <Backdrop onClick={() => setContentsOpen(false)} />}
+            <Sidebar
+              id="docb-contents"
+              aria-label="Contents"
+              aria-busy={menuLoading}
+              $open={contentsOpen}
+            >
               <SidebarTitle>Contents</SidebarTitle>
               {menuLoading ? (
                 <MenuPlaceholder>
@@ -227,13 +271,72 @@ const Body = styled.div`
   grid-template-columns: var(--db-sidebar-width) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
+
+  @media ${narrow} {
+    grid-template-columns: minmax(0, 1fr);
+  }
 `;
 
-const Sidebar = styled.aside`
+const Sidebar = styled.aside<{ $open: boolean }>`
   overflow-y: auto;
   padding: 18px 0 32px;
   border-right: 1px solid var(--db-border);
   background: var(--db-surface-muted);
+
+  @media ${narrow} {
+    position: fixed;
+    z-index: 30;
+    top: var(--db-header-height);
+    bottom: 0;
+    left: 0;
+    width: min(320px, 86vw);
+    transform: translateX(${p => (p.$open ? '0' : '-100%')});
+    /* hidden when closed, so the links are not tabbable off screen */
+    visibility: ${p => (p.$open ? 'visible' : 'hidden')};
+    box-shadow: ${p => (p.$open ? 'var(--db-shadow-lg)' : 'none')};
+    transition:
+      transform 0.25s var(--db-ease),
+      visibility 0s linear ${p => (p.$open ? '0s' : '0.25s')};
+  }
+`;
+
+const Backdrop = styled.div`
+  display: none;
+
+  @media ${narrow} {
+    position: fixed;
+    z-index: 25;
+    inset: var(--db-header-height) 0 0 0;
+    display: block;
+    background: rgb(0 0 0 / 0.35);
+    animation: fade-in 0.2s var(--db-ease);
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+`;
+
+const ContentsToggle = styled.button`
+  display: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--db-border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--db-text-muted);
+  background: var(--db-surface-muted);
+
+  &[aria-expanded='true'] {
+    color: var(--db-accent);
+  }
+
+  @media ${narrow} {
+    display: inline-grid;
+  }
 `;
 
 const SidebarTitle = styled.h2`
@@ -263,6 +366,10 @@ const Article = styled.article`
   max-width: 760px;
   margin: 0 auto;
   padding: 56px 48px 96px;
+
+  @media ${compact} {
+    padding: 28px 18px 72px;
+  }
 `;
 
 const Empty = styled.div`

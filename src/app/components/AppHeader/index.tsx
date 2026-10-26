@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { Children, Fragment, memo, ReactNode } from 'react';
 import { Link } from 'react-router';
 import styled from 'styled-components';
+import { compact, narrow } from 'styles/media';
 
 import { ColorModeSwitch } from '../ColorModeSwitch';
 import { ThemePicker } from '../ThemePicker';
@@ -29,7 +30,7 @@ export const AppHeader = memo(({ crumbs = [], actions }: Props) => {
         <BrandMark>
           <FontAwesomeIcon icon={faBookOpen} />
         </BrandMark>
-        docb
+        <BrandText>docb</BrandText>
       </Brand>
 
       {items.length > 0 && (
@@ -64,6 +65,17 @@ const Bar = styled.header`
   background: var(--db-header-bg);
   backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid var(--db-border);
+
+  @media ${narrow} {
+    gap: 10px;
+    padding: 0 14px;
+  }
+`;
+
+const BrandText = styled.span`
+  @media ${compact} {
+    display: none;
+  }
 `;
 
 const Brand = styled(Link)`
@@ -101,6 +113,13 @@ const Crumbs = styled.nav`
   min-width: 0;
   font-size: 14px;
   color: var(--db-text-muted);
+
+  /* phones: only the current page */
+  @media ${compact} {
+    & > :nth-last-child(n + 3) {
+      display: none;
+    }
+  }
 `;
 
 const Separator = styled.span`

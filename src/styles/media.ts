@@ -16,6 +16,12 @@ export const sizes = {
   xlarge: 1920,
 };
 
+/** Below this width the contents sidebar becomes a drawer */
+export const narrow = '(max-width: 860px)';
+
+/** Phones */
+export const compact = '(max-width: 520px)';
+
 // Iterate through the sizes and create a media template
 export const media = (Object.keys(sizes) as Array<keyof typeof sizes>).reduce(
   (acc, label) => {

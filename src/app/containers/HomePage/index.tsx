@@ -8,6 +8,7 @@ import { Helmet } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
 import styled from 'styled-components';
+import { compact } from 'styles/media';
 import getStorage from 'utils/getStorage';
 import pageTitle from 'utils/pageTitle';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
@@ -133,6 +134,10 @@ const Page = styled.main`
   max-width: 1080px;
   margin: 0 auto;
   padding: 0 24px 80px;
+
+  @media ${compact} {
+    padding: 0 16px 56px;
+  }
 `;
 
 const Hero = styled.section`
@@ -140,6 +145,10 @@ const Hero = styled.section`
   margin: 0 auto;
   padding: 88px 0 72px;
   text-align: center;
+
+  @media ${compact} {
+    padding: 48px 0 44px;
+  }
 `;
 
 const Eyebrow = styled.p`
@@ -169,6 +178,10 @@ const Lead = styled.p`
   margin: 0 auto 36px;
   font-size: 17px;
   color: var(--db-text-muted);
+
+  @media ${compact} {
+    font-size: 15.5px;
+  }
 `;
 
 const Search = styled.form`
@@ -194,6 +207,10 @@ const Search = styled.form`
 `;
 
 const Prefix = styled.span`
+  @media ${compact} {
+    display: none;
+  }
+
   padding-left: 12px;
   font-family: var(--db-font-mono);
   font-size: 14px;
@@ -204,6 +221,11 @@ const SearchInput = styled.input`
   flex: 1;
   min-width: 0;
   padding: 10px 6px 10px 2px;
+
+  @media ${compact} {
+    padding-left: 10px;
+  }
+
   border: 0;
   outline: 0;
   background: transparent;

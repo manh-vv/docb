@@ -6,6 +6,7 @@ import React, { memo, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import styled from 'styled-components';
+import { compact } from 'styles/media';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 import removeLastSlash from 'utils/removeLastSlash';
 
@@ -129,6 +130,10 @@ const Page = styled.div`
   max-width: 1180px;
   margin: 0 auto;
   padding: 40px 28px 72px;
+
+  @media ${compact} {
+    padding: 24px 16px 56px;
+  }
 `;
 
 const Header = styled.div`
@@ -166,4 +171,9 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
+
+  @media ${compact} {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
 `;
