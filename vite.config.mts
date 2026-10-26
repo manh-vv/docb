@@ -1,10 +1,12 @@
 /// <reference types="vitest/config" />
 import react from '@vitejs/plugin-react';
+import { copyFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, Plugin } from 'vite';
 import svgr from 'vite-plugin-svgr';
 
 const srcDir = fileURLToPath(new URL('./src', import.meta.url));
+const outDir = 'build';
 
 // Top-level folders of src/ that are imported by bare name (`utils/...`), matching tsconfig paths
 const srcAliases = ['app', 'locales', 'store', 'styles', 'types', 'utils'].map(dir => ({
@@ -12,13 +14,29 @@ const srcAliases = ['app', 'locales', 'store', 'styles', 'types', 'utils'].map(d
   replacement: `${srcDir}/${dir}`,
 }));
 
+/**
+ * GitHub Pages has no rewrite rules, so unknown paths are served from 404.html.
+ * Making it a copy of index.html lets deep links boot the SPA.
+ */
+function spaFallback(): Plugin {
+  return {
+    name: 'spa-fallback',
+    apply: 'build',
+    closeBundle() {
+      copyFileSync(`${outDir}/index.html`, `${outDir}/404.html`);
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), svgr()],
+  // Served as a GitHub Pages project site: https://manh-vv.github.io/docb/
+  base: '/docb/',
+  plugins: [react(), svgr(), spaFallback()],
   resolve: {
     alias: srcAliases,
   },
   build: {
-    outDir: 'build',
+    outDir,
   },
   test: {
     globals: true,

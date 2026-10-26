@@ -6,6 +6,7 @@
 import { faFish } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { memo } from 'react';
+import { Link } from 'react-router';
 
 interface Props {
   /**
@@ -29,9 +30,9 @@ export const Card = memo((props: Props) => {
       <div className="card-body">
         <h5 className="card-title">{name}</h5>
         <p className="card-text">{desc}</p>
-        <a href={href} className="btn btn-outline-primary">
+        <Link to={href} className="btn btn-outline-primary">
           <FontAwesomeIcon icon={faFish} />
-        </a>
+        </Link>
       </div>
     </div>
   );

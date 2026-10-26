@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Route, Routes } from 'react-router';
 import { GlobalStyle } from 'styles/global-styles';
+import removeLastSlash from 'utils/removeLastSlash';
 
 import { NotFoundPage } from './components/NotFoundPage/Loadable';
 import { DocViewer } from './containers/DocViewer/Loadable';
@@ -18,7 +19,7 @@ import { HomePage } from './containers/HomePage/Loadable';
 export function App() {
   const { i18n } = useTranslation();
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={removeLastSlash(import.meta.env.BASE_URL)}>
       <Helmet
         titleTemplate="%s - markdown reader"
         defaultTitle="docb"
