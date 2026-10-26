@@ -16,10 +16,13 @@ export default function fetchCache(input: string, init?: RequestInit) {
     return Promise.resolve(JSON.parse(data));
   }
 
-  return fetch(input, init)
-    .then(res => res.json())
-    .then(res => {
-      getStorage().setItem(key, JSON.stringify(res));
-      return res;
-    });
+  return fetch(input, init).then(res =>
+    res.json().then(json => {
+      // don't cache errors such as a rate limit, so a later retry can succeed
+      if (res.ok) {
+        getStorage().setItem(key, JSON.stringify(json));
+      }
+      return json;
+    }),
+  );
 }

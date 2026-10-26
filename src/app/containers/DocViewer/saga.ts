@@ -151,15 +151,17 @@ export function* fetchBigChapter(action) {
     payload,
   } = action;
 
-  const usp = new URLSearchParams();
-  usp.append('q', `extension:md repo:${username}/${repository}`);
-
-  const res = yield call(githubApi, `/search/code?${usp.toString()}`);
+  // List files with the git trees API: unlike code search, it works without authentication.
+  // An empty repository or a failed request has no `tree`, which leaves the menu empty.
+  const res = yield call(githubApi, `/repos/${username}/${repository}/git/trees/HEAD?recursive=1`);
+  const mdFiles = (res.tree || [])
+    .filter(({ type, path }) => type === 'blob' && /\.md$/i.test(path))
+    .map(({ path, url }) => ({ name: path.split('/').pop(), path, git_url: url }));
 
   // create menu items from file path and update local database
   const level0MenuItems: MenuItem[] = yield call(
     createMenuItemFromFilePath,
-    res.items,
+    mdFiles,
     `/viewer/${provider}/${username}/${repository}`,
   );
 
