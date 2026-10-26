@@ -1,4 +1,5 @@
 import { MenuItem } from 'types/MenuItem';
+import { LoadError } from 'utils/loadError';
 
 export interface ShowChildItems {
   menuItem: MenuItem;
@@ -33,6 +34,10 @@ export interface DocViewerState {
   lastActiveMenuItem?: MenuItem;
   menuLoading: boolean;
   contentLoading: boolean;
+  menuError?: LoadError;
+  contentError?: LoadError;
+  /** the book has loaded and holds no markdown files */
+  noMarkdown: boolean;
 }
 
 export type ContainerState = DocViewerState;

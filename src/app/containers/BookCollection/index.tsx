@@ -1,9 +1,10 @@
 import { BookCollectionView } from 'app/components/BookCollectionView';
+import { LoadErrorMessage } from 'app/components/LoadErrorMessage';
 import { LoadingBox } from 'app/components/Loading';
 import { Pagination } from 'app/components/Pagination';
-import React, { memo, useEffect } from 'react';
+import React, { memo, useCallback, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation, useNavigate, useSearchParams } from 'react-router';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import styled from 'styled-components';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 import removeLastSlash from 'utils/removeLastSlash';
@@ -11,6 +12,7 @@ import removeLastSlash from 'utils/removeLastSlash';
 import { bookCollectionSaga } from './saga';
 import {
   selectBookCollection,
+  selectError,
   selectHasBack,
   selectHasNext,
   selectLoading,
@@ -33,6 +35,7 @@ export const BookCollection = memo((props: Props) => {
   const hasBack = useSelector(selectHasBack);
   const totalPage = useSelector(selectTotalPage);
   const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
 
   const dispatch = useDispatch();
 
@@ -43,9 +46,33 @@ export const BookCollection = memo((props: Props) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const curPage = Math.max(1, Math.floor(Number(searchParams.get('page'))) || 1);
 
+  const load = useCallback(
+    () => dispatch(actions.fetchBookCollection({ provider, username, nextPage: curPage })),
+    [dispatch, provider, username, curPage],
+  );
+
   useEffect(() => {
-    dispatch(actions.fetchBookCollection({ provider, username, nextPage: curPage }));
-  }, [dispatch, provider, username, curPage]);
+    load();
+  }, [load]);
+
+  const empty = !loading && !error && bookCollection.items.length === 0;
+
+  if (error || empty) {
+    return (
+      <LoadErrorMessage
+        error={error}
+        title={error ? 'No such GitHub account' : 'No public repositories'}
+        text={
+          error
+            ? `There is no GitHub user or organization named ${username}.`
+            : `${username} has no public repositories yet.`
+        }
+        onRetry={load}
+      >
+        <Link to="/">Back to home</Link>
+      </LoadErrorMessage>
+    );
+  }
 
   function handleOnSelect(item) {
     navigate(`${removeLastSlash(location.pathname)}/${item.name}`);

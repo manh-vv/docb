@@ -70,7 +70,7 @@ Styles are styled-components plus Bootstrap 5.3 (grid, utilities, form controls,
 
 ### Caching and GitHub access
 
-- `utils/githubApi` wraps `utils/fetchCache`, which caches successful JSON responses in **sessionStorage**, keyed by URL plus a sha256 of the request options. Error responses (e.g. rate limits) are returned but not cached.
+- `utils/githubApi` wraps `utils/fetchCache`, which caches successful JSON responses in **sessionStorage**, keyed by URL plus a sha256 of the request options. A non-2xx response is thrown as `HttpError` (status, GitHub's message, rate-limit reset time) and never cached. Sagas turn errors into a serializable `LoadError` (`toLoadError`: not-found, rate-limited, network, failed) in the slice, and `LoadErrorMessage` renders it with a retry.
 - The markdown-to-HTML conversion caches in **localStorage** instead (`githupConverter` in the DocViewer saga).
 - All GitHub calls are unauthenticated, so they are subject to GitHub's anonymous rate limits. The anonymous limit is 60 requests per hour per IP.
 

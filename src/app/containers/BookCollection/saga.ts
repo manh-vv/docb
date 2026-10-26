@@ -2,6 +2,7 @@ import { PayloadAction } from '@reduxjs/toolkit';
 import { all, call, put, takeLatest } from 'redux-saga/effects';
 import { PER_PAGE } from 'utils/constants';
 import githubApi from 'utils/githubApi';
+import { toLoadError } from 'utils/loadError';
 
 import { bookCollectionActions as actions } from './slice';
 import { FetchBookPayload } from './types';
@@ -26,20 +27,19 @@ export function* fetchBookCollection(action: PayloadAction<FetchBookPayload>) {
     // the account's repo count gives the number of pages; it is cached for the session
     const [res, account] = yield all([
       call(githubApi, `/users/${username}/repos${queryStr}`),
-      call(githubApi, `/users/${username}`),
+      call(() => githubApi(`/users/${username}`).catch(() => undefined)),
     ]);
 
     yield put(
       actions.success({
         curPage: nextPage,
         perPage: per_page,
-        // an unknown user or a rate limit comes back as an error object
         items: Array.isArray(res) ? res : [],
         repoCount: typeof account?.public_repos === 'number' ? account.public_repos : undefined,
       }),
     );
-  } catch {
-    yield put(actions.failure());
+  } catch (error) {
+    yield put(actions.failure(toLoadError(error)));
   }
 }
 

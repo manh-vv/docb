@@ -1,4 +1,5 @@
 import { AppHeader } from 'app/components/AppHeader';
+import { LoadErrorMessage } from 'app/components/LoadErrorMessage';
 import { LoadingLines } from 'app/components/Loading';
 import { MdViewer } from 'app/components/MdViewer/Loadable';
 import { SidebarMenu } from 'app/components/SidebarMenu/Loadable';
@@ -12,10 +13,13 @@ import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
 import { docViewerSaga } from './saga';
 import {
+  selectContentError,
   selectContentLoading,
   selectHtmlContent,
+  selectMenuError,
   selectMenuItems,
   selectMenuLoading,
+  selectNoMarkdown,
 } from './selectors';
 import { docViewerActions as actions, reducer, sliceKey } from './slice';
 
@@ -54,6 +58,9 @@ export function DocViewer() {
   const htmlContent = useSelector(selectHtmlContent);
   const menuLoading = useSelector(selectMenuLoading);
   const contentLoading = useSelector(selectContentLoading);
+  const menuError = useSelector(selectMenuError);
+  const contentError = useSelector(selectContentError);
+  const noMarkdown = useSelector(selectNoMarkdown);
 
   const dispatch = useDispatch();
   const { hash } = useLocation();
@@ -93,6 +100,68 @@ export function DocViewer() {
   }
 
   const bookPath = `/viewer/${provider}/${username}`;
+  const book = { provider, username, repository: repository as string };
+  const libraryLink = <Link to={bookPath}>Back to {username}</Link>;
+
+  function renderMain() {
+    if (menuError) {
+      return (
+        <LoadErrorMessage
+          error={menuError}
+          title="Repository not found"
+          text={`${username} has no public repository named ${repository}.`}
+          onRetry={() => dispatch(actions.fetchBigChapter({ ...book, base64FilePath }))}
+        >
+          {libraryLink}
+        </LoadErrorMessage>
+      );
+    }
+    if (noMarkdown) {
+      return (
+        <LoadErrorMessage
+          title="No markdown files"
+          text={`${repository} has no .md files to read.`}
+        >
+          <a href={`https://github.com/${username}/${repository}`} target="_blank" rel="noreferrer">
+            View on GitHub
+          </a>
+          {libraryLink}
+        </LoadErrorMessage>
+      );
+    }
+    if (contentLoading || (menuLoading && base64FilePath)) {
+      return (
+        <Article aria-busy="true">
+          <LoadingLines lines={10} label="Loading chapter" />
+        </Article>
+      );
+    }
+    if (contentError) {
+      return (
+        <LoadErrorMessage
+          error={contentError}
+          title="Chapter not found"
+          text={`This file is not in ${repository}. Choose a chapter from the contents.`}
+          onRetry={() =>
+            dispatch(actions.fetchMdContent({ ...book, base64FilePath: base64FilePath as string }))
+          }
+        />
+      );
+    }
+    if (htmlContent) {
+      return (
+        <Article>
+          <MdViewer id="id-md-viewer" htmlContent={htmlContent} afterRender={handleAfterRender} />
+        </Article>
+      );
+    }
+    return (
+      <Empty>
+        <EmptyTitle>{repository}</EmptyTitle>
+        <p>Choose a chapter from the contents to start reading.</p>
+      </Empty>
+    );
+  }
 
   return (
     <>
@@ -125,26 +194,7 @@ export function DocViewer() {
               )}
             </Sidebar>
 
-            <Main ref={mainRef}>
-              {contentLoading ? (
-                <Article aria-busy="true">
-                  <LoadingLines lines={10} label="Loading chapter" />
-                </Article>
-              ) : htmlContent ? (
-                <Article>
-                  <MdViewer
-                    id="id-md-viewer"
-                    htmlContent={htmlContent}
-                    afterRender={handleAfterRender}
-                  />
-                </Article>
-              ) : (
-                <Empty>
-                  <EmptyTitle>{repository}</EmptyTitle>
-                  <p>Choose a chapter from the contents to start reading.</p>
-                </Empty>
-              )}
-            </Main>
+            <Main ref={mainRef}>{renderMain()}</Main>
           </Body>
         ) : (
           <LibraryMain>

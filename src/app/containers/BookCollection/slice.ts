@@ -1,6 +1,7 @@
 import { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from 'utils/@reduxjs/toolkit';
 import { PER_PAGE } from 'utils/constants';
+import { LoadError } from 'utils/loadError';
 
 import { ContainerState, FetchBookPayload, FetchBookSuccess } from './types';
 
@@ -21,9 +22,13 @@ const bookCollectionSlice = createSlice({
   reducers: {
     fetchBookCollection(state, action: PayloadAction<FetchBookPayload>) {
       state.loading = true;
+      state.error = undefined;
     },
-    failure(state) {
+    failure(state, action: PayloadAction<LoadError>) {
       state.loading = false;
+      state.items = [];
+      state.total = 0;
+      state.error = action.payload;
     },
     success(state, action: PayloadAction<FetchBookSuccess>) {
       const { items, curPage, perPage, repoCount } = action.payload;

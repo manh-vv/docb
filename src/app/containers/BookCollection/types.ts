@@ -1,3 +1,5 @@
+import { LoadError } from 'utils/loadError';
+
 /* --- STATE --- */
 export interface BookCollectionState {
   perPage: number;
@@ -8,6 +10,7 @@ export interface BookCollectionState {
   total: number;
   items: any[];
   loading: boolean;
+  error?: LoadError;
 }
 
 export type ContainerState = BookCollectionState;

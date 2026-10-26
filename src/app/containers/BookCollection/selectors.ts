@@ -8,4 +8,5 @@ export const selectCurPage = createSelector(selectBookCollection, state => state
 export const selectTotalPage = createSelector(selectBookCollection, state => state.totalPage);
 export const selectHasNext = createSelector(selectBookCollection, state => state.hasNext);
 export const selectLoading = createSelector(selectBookCollection, state => state.loading);
+export const selectError = createSelector(selectBookCollection, state => state.error);
 export const selectHasBack = createSelector(selectBookCollection, state => state.hasBack);

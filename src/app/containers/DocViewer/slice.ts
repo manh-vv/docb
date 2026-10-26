@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { MenuItem } from 'types/MenuItem';
+import { LoadError } from 'utils/loadError';
 
 import {
   ContainerState,
@@ -16,6 +17,7 @@ export const initialState: ContainerState = {
   menuItems: [],
   menuLoading: false,
   contentLoading: false,
+  noMarkdown: false,
 };
 
 const docViewerSlice = createSlice({
@@ -29,9 +31,24 @@ const docViewerSlice = createSlice({
     },
     fetchBigChapter(state, action: PayloadAction<FetchBigChapter>) {
       state.menuLoading = true;
+      state.menuError = undefined;
+      state.noMarkdown = false;
+    },
+    menuFailed(state, action: PayloadAction<LoadError>) {
+      state.menuLoading = false;
+      state.menuError = action.payload;
+    },
+    setNoMarkdown(state, action: PayloadAction<boolean>) {
+      state.noMarkdown = action.payload;
     },
     fetchMdContent(state, action: PayloadAction<FetchMdContent>) {
       state.contentLoading = true;
+      state.contentError = undefined;
+    },
+    contentFailed(state, action: PayloadAction<LoadError>) {
+      state.contentLoading = false;
+      state.htmlContent = '';
+      state.contentError = action.payload;
     },
     convertMdToHtml(state, action: PayloadAction<string>) {},
     buildMenuItemsFromHtml() {},
@@ -109,6 +126,7 @@ const docViewerSlice = createSlice({
     updateHtmlContent(state, action: PayloadAction<string>) {
       state.htmlContent = action.payload;
       state.contentLoading = false;
+      state.contentError = undefined;
     },
     updateMenuItems(state, action: PayloadAction<MenuItem[]>) {
       state.menuItems = action.payload;

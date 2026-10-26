@@ -7,6 +7,7 @@ import { MenuItem } from 'types/MenuItem';
 import fetchMdContentHelper from 'utils/fetchMdContent';
 import getStorage from 'utils/getStorage';
 import githubApi from 'utils/githubApi';
+import { HttpError, toLoadError } from 'utils/loadError';
 import { rewriteMarkdownLinks } from 'utils/rewriteMarkdownLinks';
 
 import { selectLastActiveMenuItem, selectMenuItems, selectSelectedBook } from './selectors';
@@ -58,18 +59,15 @@ export function* fetchMdContent(action) {
   const menuItem = path && (yield call(findMenuItemById, chapterId(payload, path)));
 
   if (!menuItem) {
-    yield put(actions.updateHtmlContent(''));
+    yield put(actions.contentFailed({ kind: 'not-found' }));
     return;
   }
 
   try {
     const { content } = yield call(fetchMdContentHelper, menuItem.url);
-    if (!content) {
-      throw new Error('no file content'); // e.g. rate limited
-    }
     yield put(actions.convertMdToHtml(atob(content)));
-  } catch {
-    yield put(actions.updateHtmlContent(''));
+  } catch (error) {
+    yield put(actions.contentFailed(toLoadError(error)));
   }
 }
 
@@ -93,21 +91,24 @@ function githupConverter(mdContent: string): Promise<string> {
     return Promise.resolve(data);
   }
 
-  return fetch(url, options)
-    .then(res => res.text())
-    .then(res => {
-      getStorage(true).setItem(key, res);
-      return res;
-    });
+  return fetch(url, options).then(async res => {
+    if (!res.ok) {
+      throw await HttpError.from(res);
+    }
+    const html = await res.text();
+    getStorage(true).setItem(key, html);
+    return html;
+  });
 }
 
 export function* convertMdToHtml(action) {
   const { payload } = action;
-  let htmlContent = '';
+  let htmlContent: string;
   try {
     htmlContent = yield call(githupConverter, payload);
-  } catch {
-    // leave the reader empty rather than stuck loading
+  } catch (error) {
+    yield put(actions.contentFailed(toLoadError(error)));
+    return;
   }
 
   const book = yield select(selectSelectedBook);
@@ -194,12 +195,16 @@ export function* fetchBigChapter(action) {
     payload,
   } = action;
 
-  // List files with the git trees API: unlike code search, it works without authentication.
-  // An empty repository or a failed request has no `tree`, which leaves the menu empty.
+  // List files with the git trees API: unlike code search, it works without authentication
   let res;
   try {
     res = yield call(githubApi, `/repos/${username}/${repository}/git/trees/HEAD?recursive=1`);
-  } catch {
+  } catch (error) {
+    // GitHub answers 409 for a repository without commits: an empty book, not a failure
+    if (!(error instanceof HttpError && error.status === 409)) {
+      yield put(actions.menuFailed(toLoadError(error)));
+      return;
+    }
     res = {};
   }
   const mdFiles = (res.tree || [])
@@ -214,6 +219,7 @@ export function* fetchBigChapter(action) {
   });
 
   yield put(actions.updateMenuItems(level0MenuItems));
+  yield put(actions.setNoMarkdown(mdFiles.length === 0));
 
   if (base64FilePath) {
     yield put(actions.fetchMdContent(payload));
