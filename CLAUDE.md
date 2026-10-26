@@ -51,9 +51,9 @@ Routes are in `src/app/index.tsx`. The code uses a "library / book / chapter" me
 
 `src/app/containers/DocViewer/saga.ts` drives everything, and the flow is documented at the top of `DocViewer/index.tsx`:
 
-1. `openBook` stores the selected book. If the menu is empty it runs `fetchBigChapter`, which calls GitHub code search (`/search/code?q=extension:md repo:user/repo`) and turns the file paths into a tree of `MenuItem`s (`createMenuItemFromFilePath`). Top-level files go under a synthetic `@introduction` branch (`ROOT_ID`).
+1. `openBook` stores the selected book. If the menu is empty it runs `fetchBigChapter`, which lists the repo with the git trees API (`/repos/:user/:repo/git/trees/HEAD?recursive=1`), keeps the `.md` blobs, and turns their paths into a tree of `MenuItem`s (`createMenuItemFromFilePath`). Code search is not an option: it requires authentication. Top-level files go under a synthetic `@introduction` branch (`ROOT_ID`).
 2. `fetchMdContent` looks up the `MenuItem` by file path, fetches the blob from its `git_url`, base64-decodes it, and `convertMdToHtml` posts it to GitHub's `/markdown` endpoint to get HTML.
-3. `MdViewer` renders the HTML with `dangerouslySetInnerHTML` and calls `afterRender`, which triggers `buildMenuItemsFromHtml`: it scrapes `h1` to `h6` from the `#id-md-viewer` element and attaches them as `hash` children of the active chapter.
+3. `MdViewer` renders the HTML with `dangerouslySetInnerHTML` and calls `afterRender`, which triggers `buildMenuItemsFromHtml`: it scrapes `h1` to `h6` from the `#id-md-viewer` element and attaches them as `hash` children of the active chapter. GitHub now renders each heading as `<div class="markdown-heading"><hN>...</hN><a class="anchor" id="user-content-...">` (the anchor used to sit inside the heading); `createMenuItemFromHTag` handles both, and headings without an anchor are skipped because Dexie needs an id. An exception in a saga task kills the whole `docViewerSaga`, after which the sidebar stops responding.
 
 Menu tree storage is split in two:
 
@@ -65,9 +65,9 @@ Menu item IDs are raw file paths (leaves) or single path segments (branches), an
 
 ### Caching and GitHub access
 
-- `utils/githubApi` wraps `utils/fetchCache`, which caches JSON responses in **sessionStorage**, keyed by URL plus a sha256 of the request options.
+- `utils/githubApi` wraps `utils/fetchCache`, which caches successful JSON responses in **sessionStorage**, keyed by URL plus a sha256 of the request options. Error responses (e.g. rate limits) are returned but not cached.
 - The markdown-to-HTML conversion caches in **localStorage** instead (`githupConverter` in the DocViewer saga).
-- All GitHub calls are unauthenticated, so they are subject to GitHub's anonymous rate limits. GitHub's `/search/code` endpoint now requires authentication (it returns 401), so `fetchBigChapter` currently fails against the real API.
+- All GitHub calls are unauthenticated, so they are subject to GitHub's anonymous rate limits. The anonymous limit is 60 requests per hour per IP.
 
 ### Tests
 

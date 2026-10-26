@@ -200,7 +200,11 @@ export function* closeBook() {
 }
 
 export function createMenuItemFromHTag(hTag: HTMLHeadingElement, index: number): MenuItem {
-  const aTag = hTag.getElementsByTagName('a')[0];
+  // GitHub's markdown API used to put the permalink anchor inside the heading. It now renders
+  // <div class="markdown-heading"><hN>text</hN><a class="anchor" id="..." href="..."></a></div>
+  const aTag =
+    hTag.getElementsByTagName('a')[0] ||
+    hTag.closest('.markdown-heading')?.querySelector(':scope > a.anchor');
 
   return {
     id: aTag?.getAttribute('id') as string,
@@ -235,6 +239,9 @@ export function* buildMenuItemsFromHtml() {
 
   hTags?.forEach((hTag, key) => {
     const menuItem = createMenuItemFromHTag(hTag as HTMLHeadingElement, key);
+    if (!menuItem.id) {
+      return; // no anchor to link to, and Dexie needs an id
+    }
     rs.push(menuItem);
 
     let lastLowerLevelItem;
