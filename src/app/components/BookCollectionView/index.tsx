@@ -1,3 +1,4 @@
+import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { faCodeBranch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { memo } from 'react';
@@ -8,6 +9,7 @@ interface BookItem {
   name: string;
   description: string;
   default_branch: string;
+  html_url: string;
   owner: {
     login: string;
   };
@@ -36,33 +38,42 @@ export const BookCollectionView = memo((props: Props) => {
     }
   }
 
+  // the GitHub link sits beside the button, not in it: a link inside a button is invalid HTML
   return (
-    <Book type="button" onClick={handleClick} className="open-button" title={item.name}>
-      <Cover style={{ '--hue': coverHue(item.name) } as React.CSSProperties} aria-hidden="true">
-        <span>{item.name.charAt(0)}</span>
-      </Cover>
-      <Body>
-        <Title className="title">{item.name}</Title>
-        <Desc>{item.description || 'No description'}</Desc>
-        <Branch>
-          <FontAwesomeIcon icon={faCodeBranch} /> {item.default_branch}
-        </Branch>
-      </Body>
-    </Book>
+    <Card>
+      <Book type="button" onClick={handleClick} className="open-button" title={item.name}>
+        <Cover style={{ '--hue': coverHue(item.name) } as React.CSSProperties} aria-hidden="true">
+          <span>{item.name.charAt(0)}</span>
+        </Cover>
+        <Body>
+          <Title className="title">{item.name}</Title>
+          <Desc>{item.description || 'No description'}</Desc>
+          <Branch>
+            <FontAwesomeIcon icon={faCodeBranch} /> {item.default_branch}
+          </Branch>
+        </Body>
+      </Book>
+      <RepoLink
+        href={item.html_url}
+        target="_blank"
+        rel="noreferrer"
+        aria-label={`Open ${item.name} on GitHub`}
+        title="Open on GitHub"
+      >
+        <FontAwesomeIcon icon={faGithub} />
+      </RepoLink>
+    </Card>
   );
 });
 
-const Book = styled.button`
+const Card = styled.div`
+  position: relative;
   display: flex;
-  flex-direction: column;
-  padding: 0;
   overflow: hidden;
-  text-align: left;
   border: 1px solid var(--db-border);
   border-radius: var(--db-radius-lg);
   background: var(--db-surface);
   box-shadow: var(--db-shadow-sm);
-  color: var(--db-text);
   transition:
     transform 0.2s var(--db-ease),
     box-shadow 0.2s var(--db-ease),
@@ -72,6 +83,40 @@ const Book = styled.button`
     transform: translateY(-3px);
     border-color: var(--db-border-strong);
     box-shadow: var(--db-shadow-lg);
+  }
+`;
+
+const Book = styled.button`
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  border: 0;
+  background: none;
+  color: var(--db-text);
+`;
+
+/* on the cover, so it reads over the cover color in every theme */
+const RepoLink = styled.a`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 16px;
+  color: rgb(255 255 255 / 0.92);
+  background: rgb(0 0 0 / 0.22);
+  transition: background 0.15s var(--db-ease);
+
+  &:hover,
+  &:focus-visible {
+    color: #fff;
+    background: rgb(0 0 0 / 0.4);
   }
 `;
 

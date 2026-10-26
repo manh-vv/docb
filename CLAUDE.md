@@ -44,6 +44,7 @@ Routes are in `src/app/index.tsx`. The code uses a "library / book / chapter" me
 - `/viewer/:provider/:username` (one route with optional `:repository?/:base64FilePath?` segments): the user is a "library"; `DocViewer` renders `BookCollection`, a paginated list of the user's repos.
 - `/viewer/:provider/:username/:repository`: a repo is a "book"; the sidebar is built from its markdown files.
 - `/viewer/:provider/:username/:repository/:base64FilePath`: an md file is a "chapter". The path segment is `encodeURIComponent(btoa(filePath))`.
+- `?ref=<branch>` on a book or chapter reads it from another branch than the default one (`BranchPicker` at the top of the sidebar). Build reader routes with `withRef` and GitHub links with `githubUrl` (`utils/bookUrls`) so the branch carries through.
 
 `provider` is only ever `github` today; gitlab is mentioned in comments but not implemented.
 
@@ -62,7 +63,7 @@ Menu tree storage is split in two:
 - Redux `menuItems` holds only the currently visible, flattened list. Expanding a node queries Dexie for children (`findChildItems`) and splices them in after the parent (`showChildItems`); collapsing removes descendants (`hideChildItems`). `SidebarMenu` renders this flat list using `level` for indentation.
 - Sidebar clicks go through an `actionChannel` (`watchClickOnMenuItem`) so they are handled one at a time, and `handleClickOnMenuItem` toggles from the item in the store, not the possibly stale click payload. `showChildItems` is a no-op if the parent is collapsed or its children are already shown. `fetchMdContent` calls `revealChapter` first, which expands the chapter's ancestor folders and marks it active, so chapters opened from links, deep links or history show up in the sidebar. Overlapping clicks used to duplicate children or show them under a collapsed parent.
 
-All books share the one Dexie table, so menu item ids are scoped by book: `github/user/repo:path/to/file.md` for files and folders (folders by full path), `github/user/repo:@introduction` for the root branch, and `<chapter id>#<anchor id>` for headings (`bookId` / `chapterId` in the saga). `openBook` reloads the menu whenever the book changes, not only when it is empty. Changing the id scheme needs a Dexie version bump that clears the table (see `store/db.ts`).
+All books share the one Dexie table, so menu item ids are scoped by book: `github/user/repo:path/to/file.md` for files and folders (folders by full path), `github/user/repo:@introduction` for the root branch, and `<chapter id>#<anchor id>` for headings (`bookId` / `chapterId` in the saga). A non-default branch is its own book: `github/user/repo@branch:...`. `openBook` reloads the menu whenever the book changes, not only when it is empty. Changing the id scheme needs a Dexie version bump that clears the table (see `store/db.ts`).
 
 ### Styling
 

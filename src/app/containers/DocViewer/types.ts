@@ -13,18 +13,22 @@ export interface FetchBigChapter {
   provider: string;
   username: string;
   repository: string;
+  /** the branch, when it is not the default one */
+  ref?: string;
   base64FilePath?: string;
 }
 export interface FetchMdContent {
   provider: string;
   username: string;
   repository: string;
+  ref?: string;
   base64FilePath: string;
 }
 export interface SelectedBook {
   provider: string;
   username: string;
   repository?: string;
+  ref?: string;
   base64FilePath?: string;
 }
 export interface DocViewerState {

@@ -1,10 +1,13 @@
 import { encodeBase64Utf8 } from './base64';
+import { encodePath, githubUrl, withRef } from './bookUrls';
 import removeLastSlash from './removeLastSlash';
 
 export interface ChapterLocation {
   provider: string;
   username: string;
   repository: string;
+  /** the branch, when it is not the default one */
+  ref?: string;
   /** path of the rendered file in the repository */
   path: string;
 }
@@ -30,10 +33,6 @@ function safeDecode(value: string): string {
   } catch {
     return value;
   }
-}
-
-function encodePath(path: string): string {
-  return path.split('/').map(encodeURIComponent).join('/');
 }
 
 /** GitHub prefixes heading and footnote ids with `user-content-` and maps plain fragments with JS */
@@ -68,13 +67,16 @@ export function rewriteMarkdownLinks(html: string, at: ChapterLocation): string 
 
     if (/\.md$/i.test(target)) {
       const hash = fragment ? `#${anchor(safeDecode(fragment))}` : '';
-      const route = `/viewer/${at.provider}/${repo}/${encodeURIComponent(encodeBase64Utf8(target))}${hash}`;
+      const route = withRef(
+        `/viewer/${at.provider}/${repo}/${encodeURIComponent(encodeBase64Utf8(target))}${hash}`,
+        at.ref,
+      );
       a.setAttribute('href', `${basename}${route}`);
       a.setAttribute('data-route', route);
       return;
     }
 
-    a.setAttribute('href', `https://github.com/${repo}/blob/HEAD/${encodePath(target)}`);
+    a.setAttribute('href', githubUrl(repo, at.ref, target));
     a.setAttribute('target', '_blank');
     a.setAttribute('rel', 'noopener noreferrer');
   });
@@ -85,7 +87,11 @@ export function rewriteMarkdownLinks(html: string, at: ChapterLocation): string 
       return;
     }
     const target = resolveRepoPath(at.path, safeDecode(src.split(/[?#]/)[0]));
-    img.setAttribute('src', `https://raw.githubusercontent.com/${repo}/HEAD/${encodePath(target)}`);
+    const ref = at.ref ? encodePath(at.ref) : 'HEAD';
+    img.setAttribute(
+      'src',
+      `https://raw.githubusercontent.com/${repo}/${ref}/${encodePath(target)}`,
+    );
   });
 
   return doc.body.innerHTML;

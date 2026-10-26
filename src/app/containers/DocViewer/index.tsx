@@ -3,15 +3,18 @@ import { LoadErrorMessage } from 'app/components/LoadErrorMessage';
 import { LoadingLines } from 'app/components/Loading';
 import { MdViewer } from 'app/components/MdViewer/Loadable';
 import { SidebarMenu } from 'app/components/SidebarMenu/Loadable';
+import { BranchPicker } from 'app/components/BranchPicker';
 import { BookCollection } from 'app/containers/BookCollection';
+import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { faListUl } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, Navigate, useLocation, useParams } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import styled from 'styled-components';
 import { compact, narrow } from 'styles/media';
+import { githubUrl, withRef } from 'utils/bookUrls';
 import pageTitle from 'utils/pageTitle';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
@@ -41,6 +44,7 @@ interface PathParams {
  * - username: organization or user
  * - repository: repository name
  * - base64FilePath: encodeURIComponent(base64 of the UTF-8 file path), see utils/base64
+ * - ref (query): the branch, when it is not the default one, see utils/bookUrls
  * 2. If the repository exists
  * - Open a book
  * - - updated selected book
@@ -96,15 +100,18 @@ export function DocViewer() {
     repository,
     base64FilePath,
   } = useParams<keyof PathParams>();
+  const [searchParams] = useSearchParams();
+  const ref = searchParams.get('ref') || undefined;
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (repository) {
-      dispatch(actions.openBook({ provider, username, repository, base64FilePath }));
+      dispatch(actions.openBook({ provider, username, repository, ref, base64FilePath }));
     } else {
       dispatch(actions.closeBook());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider, username, repository, base64FilePath]);
+  }, [provider, username, repository, ref, base64FilePath]);
 
   function handleAfterRender() {
     dispatch(actions.buildMenuItemsFromHtml());
@@ -132,16 +139,28 @@ export function DocViewer() {
   const title = [filePath, repository ? `${username}/${repository}` : username]
     .filter(Boolean)
     .join(' | ');
-  const book = { provider, username, repository: repository as string };
+  const book = { provider, username, repository: repository as string, ref };
+  const bookRoute = withRef(`${bookPath}/${repository}`, ref);
+  const chapterRoute = (segment: string) => withRef(`${bookPath}/${repository}/${segment}`, ref);
   const libraryLink = <Link to={bookPath}>Back to {username}</Link>;
+
+  /** Read the open chapter on another branch; a file missing there shows "Chapter not found" */
+  function switchBranch(branch?: string) {
+    const chapter = base64FilePath ? `/${base64FilePath}` : '';
+    navigate(withRef(`${bookPath}/${repository}${chapter}`, branch));
+  }
 
   function renderMain() {
     if (menuError) {
       return (
         <LoadErrorMessage
           error={menuError}
-          title="Repository not found"
-          text={`${username} has no public repository named ${repository}.`}
+          title={ref ? 'Branch not found' : 'Repository not found'}
+          text={
+            ref
+              ? `${username}/${repository} has no branch named ${ref}.`
+              : `${username} has no public repository named ${repository}.`
+          }
           onRetry={() => dispatch(actions.fetchBigChapter({ ...book, base64FilePath }))}
         >
           {libraryLink}
@@ -154,7 +173,7 @@ export function DocViewer() {
           title="No markdown files"
           text={`${repository} has no .md files to read.`}
         >
-          <a href={`https://github.com/${username}/${repository}`} target="_blank" rel="noreferrer">
+          <a href={githubUrl(`${username}/${repository}`, ref)} target="_blank" rel="noreferrer">
             View on GitHub
           </a>
           {libraryLink}
@@ -163,7 +182,7 @@ export function DocViewer() {
     }
     // the README is scoped by book, so one left from the previous book is never followed
     if (!base64FilePath && readme && readme.bookId === bookId(book)) {
-      return <Navigate replace to={`${bookPath}/${repository}/${readme.base64FilePath}`} />;
+      return <Navigate replace to={chapterRoute(readme.base64FilePath)} />;
     }
     if (contentLoading || menuLoading) {
       return (
@@ -177,7 +196,7 @@ export function DocViewer() {
         <LoadErrorMessage
           error={contentError}
           title="Chapter not found"
-          text={`This file is not in ${repository}. Choose a chapter from the contents.`}
+          text={`This file is not in ${repository}${ref ? ` on ${ref}` : ''}. Choose a chapter from the contents.`}
           onRetry={() =>
             dispatch(actions.fetchMdContent({ ...book, base64FilePath: base64FilePath as string }))
           }
@@ -217,21 +236,33 @@ export function DocViewer() {
         <AppHeader
           crumbs={[
             <Link to={bookPath}>{username}</Link>,
-            repository && <Link to={`${bookPath}/${repository}`}>{repository}</Link>,
-            filePath && <Link to={`${bookPath}/${repository}/${base64FilePath}`}>{filePath}</Link>,
+            repository && <Link to={bookRoute}>{repository}</Link>,
+            filePath && <Link to={chapterRoute(base64FilePath as string)}>{filePath}</Link>,
           ]}
           actions={
             repository && (
-              <ContentsToggle
-                ref={toggleRef}
-                type="button"
-                aria-label="Contents"
-                aria-controls="docb-contents"
-                aria-expanded={contentsOpen}
-                onClick={() => setContentsOpen(open => !open)}
-              >
-                <FontAwesomeIcon icon={faListUl} fixedWidth />
-              </ContentsToggle>
+              <>
+                <HeaderButton
+                  as="a"
+                  href={githubUrl(`${username}/${repository}`, ref, filePath)}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={filePath ? 'View this file on GitHub' : 'View the repository on GitHub'}
+                >
+                  <FontAwesomeIcon icon={faGithub} />
+                  <HeaderButtonText>GitHub</HeaderButtonText>
+                </HeaderButton>
+                <ContentsToggle
+                  ref={toggleRef}
+                  type="button"
+                  aria-label="Contents"
+                  aria-controls="docb-contents"
+                  aria-expanded={contentsOpen}
+                  onClick={() => setContentsOpen(open => !open)}
+                >
+                  <FontAwesomeIcon icon={faListUl} fixedWidth />
+                </ContentsToggle>
+              </>
             )
           }
         />
@@ -245,6 +276,12 @@ export function DocViewer() {
               aria-busy={menuLoading}
               $open={contentsOpen}
             >
+              <BranchPicker
+                username={username}
+                repository={repository}
+                branch={ref}
+                onChange={switchBranch}
+              />
               <SidebarTitle>Contents</SidebarTitle>
               {menuLoading ? (
                 <MenuPlaceholder>
@@ -343,6 +380,38 @@ const ContentsToggle = styled.button`
 
   @media ${narrow} {
     display: inline-grid;
+  }
+`;
+
+const HeaderButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--db-border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--db-text-muted);
+  background: var(--db-surface-muted);
+  text-decoration: none;
+  transition: color 0.15s var(--db-ease);
+
+  &:hover {
+    color: var(--db-heading);
+  }
+
+  @media ${compact} {
+    padding: 0;
+  }
+`;
+
+const HeaderButtonText = styled.span`
+  @media ${compact} {
+    display: none;
   }
 `;
 

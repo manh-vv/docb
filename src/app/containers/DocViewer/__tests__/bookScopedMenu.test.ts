@@ -27,11 +27,14 @@ const trees: Record<string, string[]> = {
   other: ['README.md', 'CHANGELOG.md'],
   nested: ['docs/readme.md', 'notes.md'],
   lowercase: ['Readme.md'],
+  'docb@dev': ['README.md', 'DEV.md'],
 };
 vi.mock('utils/githubApi', () => ({
+  // /repos/u/:repo/git/trees/:treeish?recursive=1
   default: async (path: string) => {
-    const repo = path.split('/')[3];
-    return { tree: trees[repo].map(p => ({ path: p, type: 'blob', url: `blob:${repo}/${p}` })) };
+    const [, , , repo, , , treeish] = path.split(/[/?]/);
+    const files = trees[`${repo}@${decodeURIComponent(treeish)}`] || trees[repo];
+    return { tree: files.map(p => ({ path: p, type: 'blob', url: `blob:${repo}/${p}` })) };
   },
 }));
 
@@ -46,8 +49,8 @@ function setup() {
 
   const settle = () => new Promise(resolve => setTimeout(resolve, 50));
   const visible = () => store.getState().docViewer.menuItems.map(({ text }) => text);
-  const open = async (repository: string) => {
-    store.dispatch(actions.openBook({ provider: 'github', username: 'u', repository }));
+  const open = async (repository: string, ref?: string) => {
+    store.dispatch(actions.openBook({ provider: 'github', username: 'u', repository, ref }));
     await settle();
   };
   const expand = async (text: string) => {
@@ -87,6 +90,24 @@ describe('book scoped menu items', () => {
     await expand('docs');
 
     expect(visible()).toEqual(['Introduction', 'a', 'docs', 'x.md', 'b']);
+  });
+});
+
+describe('a book on another branch', () => {
+  it('lists the files of that branch, scoped apart from the default one', async () => {
+    const { store, open, expand, visible } = setup();
+
+    await open('docb');
+    await open('docb', 'dev');
+    await expand('Introduction');
+
+    expect(visible()).toEqual(['Introduction', 'README.md', 'DEV.md']);
+    const readme = store.getState().docViewer.menuItems.find(i => i.text === 'README.md')!;
+    expect(readme.id).toBe('github/u/docb@dev:README.md');
+    expect(readme.href).toBe(
+      `/viewer/github/u/docb/${encodeURIComponent(btoa('README.md'))}?ref=dev`,
+    );
+    expect(store.getState().docViewer.readme?.bookId).toBe('github/u/docb@dev');
   });
 });
 

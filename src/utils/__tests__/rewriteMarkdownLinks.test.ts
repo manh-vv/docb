@@ -67,3 +67,28 @@ describe('rewriteMarkdownLinks', () => {
     );
   });
 });
+
+describe('rewriteMarkdownLinks on another branch', () => {
+  const onBranch = (html: string) => {
+    const el = document.createElement('div');
+    el.innerHTML = rewriteMarkdownLinks(html, { ...at, ref: 'feat/x' });
+    return el;
+  };
+
+  it('keeps reading from the branch', () => {
+    const a = onBranch('<a href="setup.md#install">x</a>').querySelector('a')!;
+    expect(a.getAttribute('data-route')).toBe(
+      `${route('docs/guide/setup.md')}?ref=feat%2Fx#user-content-install`,
+    );
+  });
+
+  it('links files and images on the branch', () => {
+    const el = onBranch('<a href="run.sh">x</a><img src="img/a.png">');
+    expect(el.querySelector('a')!.getAttribute('href')).toBe(
+      'https://github.com/u/r/blob/feat/x/docs/guide/run.sh',
+    );
+    expect(el.querySelector('img')!.getAttribute('src')).toBe(
+      'https://raw.githubusercontent.com/u/r/feat/x/docs/guide/img/a.png',
+    );
+  });
+});

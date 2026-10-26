@@ -5,6 +5,7 @@ import createBranch, { ROOT_ID } from 'types/createBranch';
 import createLeaf from 'types/createLeaf';
 import { MenuItem } from 'types/MenuItem';
 import { decodeBase64Utf8, encodeBase64Utf8 } from 'utils/base64';
+import { withRef } from 'utils/bookUrls';
 import fetchMdContentHelper from 'utils/fetchMdContent';
 import getStorage from 'utils/getStorage';
 import { authHeaders } from 'utils/githubAuth';
@@ -19,14 +20,17 @@ interface Book {
   provider: string;
   username: string;
   repository?: string;
+  /** the branch, when it is not the default one */
+  ref?: string;
 }
 
 /**
  * Menu items of every book share one IndexedDB table, so ids are scoped by book:
  * `github/user/repo:docs/intro.md` for files and folders, `<chapter id>#<anchor>` for headings.
+ * A branch other than the default one is a book of its own: `github/user/repo@branch`.
  */
-export function bookId({ provider, username, repository }: Book): string {
-  return `${provider}/${username}/${repository}`;
+export function bookId({ provider, username, repository, ref }: Book): string {
+  return `${provider}/${username}/${repository}${ref ? `@${ref}` : ''}`;
 }
 
 export function chapterId(book: Book, path: string): string {
@@ -137,7 +141,7 @@ export function* convertMdToHtml(action) {
  * @returns return the list of item level 0 (top level)
  */
 export function createMenuItemFromFilePath(items: any[], book: Book): Promise<MenuItem[]> {
-  const prefixHref = `/viewer/${bookId(book)}`;
+  const prefixHref = `/viewer/${book.provider}/${book.username}/${book.repository}`;
   const rootId = chapterId(book, ROOT_ID);
 
   const listOfLevel0Items: MenuItem[] = [];
@@ -163,7 +167,7 @@ export function createMenuItemFromFilePath(items: any[], book: Book): Promise<Me
 
         const mi = createLeaf(chapterId(book, path), name);
         mi.url = git_url;
-        mi.href = `${prefixHref}/${encodeURIComponent(encodeBase64Utf8(path))}`;
+        mi.href = withRef(`${prefixHref}/${encodeURIComponent(encodeBase64Utf8(path))}`, book.ref);
 
         const parent = map.get(parentId) as MenuItem;
         parent.childIds?.push(mi.id);
@@ -197,14 +201,18 @@ export function createMenuItemFromFilePath(items: any[], book: Book): Promise<Me
  */
 export function* fetchBigChapter(action) {
   const {
-    payload: { provider, username, repository, base64FilePath },
+    payload: { provider, username, repository, ref, base64FilePath },
     payload,
   } = action;
 
   // List files with the git trees API: unlike code search, it works without authentication
   let res;
   try {
-    res = yield call(githubApi, `/repos/${username}/${repository}/git/trees/HEAD?recursive=1`);
+    const treeish = ref ? encodeURIComponent(ref) : 'HEAD';
+    res = yield call(
+      githubApi,
+      `/repos/${username}/${repository}/git/trees/${treeish}?recursive=1`,
+    );
   } catch (error) {
     // GitHub answers 409 for a repository without commits: an empty book, not a failure
     if (!(error instanceof HttpError && error.status === 409)) {
@@ -222,6 +230,7 @@ export function* fetchBigChapter(action) {
     provider,
     username,
     repository,
+    ref,
   });
 
   // a book opened without a chapter starts at its README, as on GitHub. Set before the menu,
@@ -230,7 +239,7 @@ export function* fetchBigChapter(action) {
   if (readme) {
     yield put(
       actions.setReadme({
-        bookId: bookId({ provider, username, repository }),
+        bookId: bookId({ provider, username, repository, ref }),
         base64FilePath: encodeURIComponent(encodeBase64Utf8(readme.path)),
       }),
     );

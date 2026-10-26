@@ -217,8 +217,9 @@ const Chevron = styled.span<{ $open?: boolean }>`
 
 export const SidebarMenu = memo((props: Props) => {
   const { menuItems = [], onSelect } = props;
-  const { pathname } = useLocation();
-  const openPath = safeDecode(pathname);
+  // chapters on another branch than the default one carry it as `?ref=`
+  const { pathname, search } = useLocation();
+  const openPath = safeDecode(pathname + search);
 
   return (
     <MenuContainer>
