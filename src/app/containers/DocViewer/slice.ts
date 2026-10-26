@@ -29,7 +29,6 @@ const docViewerSlice = createSlice({
     fetchMdContent(state, action: PayloadAction<FetchMdContent>) {},
     convertMdToHtml(state, action: PayloadAction<string>) {},
     buildMenuItemsFromHtml() {},
-    restoreLastActiveMenuItems() {},
     handleClickOnMenuItem(state, action: PayloadAction<MenuItem>) {},
     showChildItems(state, action: PayloadAction<ShowChildItems>) {
       const {

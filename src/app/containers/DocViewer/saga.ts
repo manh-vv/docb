@@ -11,6 +11,39 @@ import githubApi from 'utils/githubApi';
 import { selectLastActiveMenuItem, selectMenuItems, selectSelectedBook } from './selectors';
 import { docViewerActions as actions } from './slice';
 
+interface Book {
+  provider: string;
+  username: string;
+  repository?: string;
+}
+
+/**
+ * Menu items of every book share one IndexedDB table, so ids are scoped by book:
+ * `github/user/repo:docs/intro.md` for files and folders, `<chapter id>#<anchor>` for headings.
+ */
+export function bookId({ provider, username, repository }: Book): string {
+  return `${provider}/${username}/${repository}`;
+}
+
+export function chapterId(book: Book, path: string): string {
+  return `${bookId(book)}:${path}`;
+}
+
+/**
+ * The file path from the URL segment, or undefined when it is not valid base64,
+ * e.g. after following a relative link inside a markdown file
+ */
+export function decodeFilePath(base64FilePath?: string): string | undefined {
+  if (!base64FilePath) {
+    return undefined;
+  }
+  try {
+    return atob(decodeURIComponent(base64FilePath));
+  } catch {
+    return undefined;
+  }
+}
+
 export function findMenuItemById(id: string): Promise<MenuItem> {
   return db.menuItems.get(id).then(rs => {
     return rs as MenuItem;
@@ -18,18 +51,13 @@ export function findMenuItemById(id: string): Promise<MenuItem> {
 }
 
 export function* fetchMdContent(action) {
-  const {
-    payload: { base64FilePath },
-  } = action;
+  const { payload } = action;
 
-  if (!base64FilePath) {
-    return;
-  }
-
-  const path = atob(decodeURIComponent(base64FilePath));
-  const menuItem = yield call(findMenuItemById, path);
+  const path = decodeFilePath(payload.base64FilePath);
+  const menuItem = path && (yield call(findMenuItemById, chapterId(payload, path)));
 
   if (!menuItem) {
+    yield put(actions.updateHtmlContent(''));
     return;
   }
 
@@ -80,11 +108,12 @@ export function* convertMdToHtml(action) {
  *    path: string;
  *    git_url: string;
  *  }
- * @param prefixHref
+ * @param book the book the files belong to, which scopes the menu item ids
  * @returns return the list of item level 0 (top level)
  */
-export function createMenuItemFromFilePath(items: any[], prefixHref: string): Promise<MenuItem[]> {
-  // TODO: prefix href can be used as a uniq id so that we can cache this value using this key
+export function createMenuItemFromFilePath(items: any[], book: Book): Promise<MenuItem[]> {
+  const prefixHref = `/viewer/${bookId(book)}`;
+  const rootId = chapterId(book, ROOT_ID);
 
   const listOfLevel0Items: MenuItem[] = [];
   const map: Map<string, MenuItem> = new Map(); // cache created item so that we dont' need to receate it
@@ -92,10 +121,12 @@ export function createMenuItemFromFilePath(items: any[], prefixHref: string): Pr
   items.forEach(item => {
     const { name, path, git_url } = item;
     const keys = path.split('/');
+    // folders are identified by their full path, so `a/docs` and `b/docs` stay apart
+    const folderId = (i: number) => chapterId(book, keys.slice(0, i + 1).join('/'));
 
-    if (keys.length === 1 && !map.has(ROOT_ID)) {
+    if (keys.length === 1 && !map.has(rootId)) {
       // create introduction level item
-      const mi = createBranch(ROOT_ID, 'Introduction');
+      const mi = createBranch(rootId, 'Introduction');
       map.set(mi.id, mi);
       listOfLevel0Items.unshift(mi);
     }
@@ -103,9 +134,9 @@ export function createMenuItemFromFilePath(items: any[], prefixHref: string): Pr
     keys.forEach((k, i) => {
       // if it is the last item then it is a leaf
       if (i === keys.length - 1) {
-        const parentId = keys.length > 1 ? keys[i - 1] : ROOT_ID;
+        const parentId = keys.length > 1 ? folderId(i - 1) : rootId;
 
-        const mi = createLeaf(path, name);
+        const mi = createLeaf(chapterId(book, path), name);
         mi.url = git_url;
         mi.href = `${prefixHref}/${encodeURIComponent(btoa(path))}`;
 
@@ -115,10 +146,10 @@ export function createMenuItemFromFilePath(items: any[], prefixHref: string): Pr
         mi.level = parent.level + 1;
 
         map.set(mi.id, mi);
-      } else if (!map.has(k)) {
-        const mi = createBranch(k);
+      } else if (!map.has(folderId(i))) {
+        const mi = createBranch(folderId(i), k);
         if (i > 0) {
-          const parent = map.get(keys[i - 1]) as MenuItem;
+          const parent = map.get(folderId(i - 1)) as MenuItem;
           parent.childIds?.push(mi.id);
           mi.parentId = parent.id;
           mi.level = parent.level + 1;
@@ -140,12 +171,6 @@ export function createMenuItemFromFilePath(items: any[], prefixHref: string): Pr
  * - chapter is path of md file
  */
 export function* fetchBigChapter(action) {
-  // if the menu items had been already filled then we can pass this action
-  const menuItems = yield select(selectMenuItems);
-  if (menuItems && menuItems.length) {
-    return;
-  }
-
   const {
     payload: { provider, username, repository, base64FilePath },
     payload,
@@ -159,11 +184,11 @@ export function* fetchBigChapter(action) {
     .map(({ path, url }) => ({ name: path.split('/').pop(), path, git_url: url }));
 
   // create menu items from file path and update local database
-  const level0MenuItems: MenuItem[] = yield call(
-    createMenuItemFromFilePath,
-    mdFiles,
-    `/viewer/${provider}/${username}/${repository}`,
-  );
+  const level0MenuItems: MenuItem[] = yield call(createMenuItemFromFilePath, mdFiles, {
+    provider,
+    username,
+    repository,
+  });
 
   yield put(actions.updateMenuItems(level0MenuItems));
 
@@ -180,11 +205,14 @@ export function* openBook(action) {
     payload: { base64FilePath },
   } = action;
 
+  const previousBook = yield select(selectSelectedBook);
   yield put(actions.updateSelectedBook(payload));
 
-  // if the menu items had been already filled then we don't have to reload big chapters
+  // the menu only needs loading when it is empty or shows another book
   const menuItems = yield select(selectMenuItems);
-  if (!(menuItems && menuItems.length)) {
+  const sameBook = previousBook && bookId(previousBook) === bookId(payload);
+  if (!sameBook || !(menuItems && menuItems.length)) {
+    yield put(actions.updateMenuItems([]));
     yield put(actions.fetchBigChapter(payload));
   } else {
     if (base64FilePath) {
@@ -199,31 +227,38 @@ export function* closeBook() {
   yield put(actions.updateMenuItems([]));
 }
 
-export function createMenuItemFromHTag(hTag: HTMLHeadingElement, index: number): MenuItem {
+export function createMenuItemFromHTag(
+  hTag: HTMLHeadingElement,
+  index: number,
+  parentChapterId: string,
+): MenuItem {
   // GitHub's markdown API used to put the permalink anchor inside the heading. It now renders
   // <div class="markdown-heading"><hN>text</hN><a class="anchor" id="..." href="..."></a></div>
   const aTag =
     hTag.getElementsByTagName('a')[0] ||
     hTag.closest('.markdown-heading')?.querySelector(':scope > a.anchor');
 
+  // the anchor's id is what the page can scroll to; its href points at an id GitHub sets with JS
+  const anchorId = aTag?.getAttribute('id');
+
   return {
-    id: aTag?.getAttribute('id') as string,
+    id: (anchorId && `${parentChapterId}#${anchorId}`) as string,
     active: false,
     level: +hTag.tagName.substr(1),
     order: index,
     text: hTag.innerText,
     type: 'hash',
-    href: aTag?.getAttribute('href') as string,
+    href: (anchorId && `#${anchorId}`) as string,
   };
 }
 
 export function* buildMenuItemsFromHtml() {
   // find current big chapter
   const selectedBook = yield select(selectSelectedBook);
-  const path = atob(decodeURIComponent(selectedBook.base64FilePath));
-  const activeChapter: MenuItem = yield findMenuItemById(path);
+  const path = decodeFilePath(selectedBook.base64FilePath);
+  const activeChapter: MenuItem = path && (yield findMenuItemById(chapterId(selectedBook, path)));
   if (!activeChapter) {
-    throw new Error('menu items are not ready');
+    return; // menu items are not ready
   }
 
   if (activeChapter.childIds && activeChapter.childIds.length) {
@@ -238,7 +273,7 @@ export function* buildMenuItemsFromHtml() {
   let smallestLevel = 6;
 
   hTags?.forEach((hTag, key) => {
-    const menuItem = createMenuItemFromHTag(hTag as HTMLHeadingElement, key);
+    const menuItem = createMenuItemFromHTag(hTag as HTMLHeadingElement, key, activeChapter.id);
     if (!menuItem.id) {
       return; // no anchor to link to, and Dexie needs an id
     }
@@ -360,21 +395,6 @@ export function* watchClickOnMenuItem() {
   }
 }
 
-export function* restoreLastActiveMenuItems(action) {
-  const {
-    payload: { base64FilePath },
-  } = action;
-
-  const menuItemId = atob(decodeURIComponent(base64FilePath));
-  let cur = yield call(findMenuItemById, menuItemId);
-  // its parent and ancestors also active too
-  const stack: MenuItem[] = [cur];
-  while (cur.parentId) {
-    cur = yield call(findMenuItemById, cur.parentId);
-    stack.push(cur);
-  }
-}
-
 export function* docViewerSaga() {
   yield takeLatest(actions.openBook.type, openBook);
   yield takeLatest(actions.closeBook.type, closeBook);
@@ -387,6 +407,4 @@ export function* docViewerSaga() {
 
   yield takeLatest(actions.buildMenuItemsFromHtml.type, buildMenuItemsFromHtml);
   yield fork(watchClickOnMenuItem);
-
-  yield takeLatest(actions.restoreLastActiveMenuItems.type, restoreLastActiveMenuItems);
 }

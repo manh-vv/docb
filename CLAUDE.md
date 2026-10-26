@@ -61,7 +61,7 @@ Menu tree storage is split in two:
 - Redux `menuItems` holds only the currently visible, flattened list. Expanding a node queries Dexie for children (`findChildItems`) and splices them in after the parent (`showChildItems`); collapsing removes descendants (`hideChildItems`). `SidebarMenu` renders this flat list using `level` for indentation.
 - Sidebar clicks go through an `actionChannel` (`watchClickOnMenuItem`) so they are handled one at a time, and `handleClickOnMenuItem` toggles from the item in the store, not the possibly stale click payload. `showChildItems` is a no-op if the parent is collapsed or its children are already shown. Overlapping clicks used to duplicate children or show them under a collapsed parent.
 
-Menu item IDs are raw file paths (leaves) or single path segments (branches), and the Dexie database is not scoped per repository.
+All books share the one Dexie table, so menu item ids are scoped by book: `github/user/repo:path/to/file.md` for files and folders (folders by full path), `github/user/repo:@introduction` for the root branch, and `<chapter id>#<anchor id>` for headings (`bookId` / `chapterId` in the saga). `openBook` reloads the menu whenever the book changes, not only when it is empty. Changing the id scheme needs a Dexie version bump that clears the table (see `store/db.ts`).
 
 ### Caching and GitHub access
 

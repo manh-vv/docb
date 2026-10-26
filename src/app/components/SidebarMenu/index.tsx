@@ -63,7 +63,7 @@ const MenuItemView = memo((props: { menuItem: MenuItem; index: number; onClick?:
           <b>{shortText}</b>
         </Link>
       ) : (
-        <MenuItemContent href={`#${id}`} key={id}>
+        <MenuItemContent href={href} key={id}>
           {shortText}
         </MenuItemContent>
       )}
