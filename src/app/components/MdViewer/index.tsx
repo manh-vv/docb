@@ -39,13 +39,13 @@ export const MdViewer = (props: Props) => {
 /** Typography for the HTML that GitHub's markdown API returns */
 const Paper = styled.div`
   font-family: var(--db-font-reading);
-  font-size: 18.5px;
+  font-size: 17px;
   line-height: 1.75;
   color: var(--db-text);
   overflow-wrap: break-word;
 
   @media ${compact} {
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1.7;
   }
 
@@ -68,19 +68,26 @@ const Paper = styled.div`
     color: var(--db-heading);
   }
 
+  h1,
+  h2 {
+    font-weight: var(--db-weight-display);
+  }
+
   h1 {
-    font-size: 2.1em;
-    letter-spacing: -0.025em;
+    font-size: 2.3em;
+    letter-spacing: -0.03em;
   }
 
   h2 {
-    font-size: 1.55em;
+    font-size: 1.6em;
+    letter-spacing: -0.02em;
     padding-bottom: 0.3em;
     border-bottom: 1px solid var(--db-border);
   }
 
   h3 {
     font-size: 1.25em;
+    font-weight: 500;
   }
 
   h4,

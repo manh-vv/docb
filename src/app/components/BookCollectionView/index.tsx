@@ -101,7 +101,7 @@ const Cover = styled.div`
   span {
     font-family: var(--db-font-reading);
     font-size: 44px;
-    font-weight: 600;
+    font-weight: var(--db-weight-display);
     line-height: 1;
     text-transform: uppercase;
     color: rgb(255 255 255 / 0.92);

@@ -42,7 +42,7 @@ const Wrapper = styled.main`
 const Code = styled.div`
   font-family: var(--db-font-reading);
   font-size: 96px;
-  font-weight: 600;
+  font-weight: var(--db-weight-display);
   line-height: 1;
   letter-spacing: -0.04em;
   color: var(--db-accent);
@@ -52,7 +52,7 @@ const Title = styled.h1`
   margin: 18px 0 6px;
   font-family: var(--db-font-reading);
   font-size: 28px;
-  font-weight: 600;
+  font-weight: var(--db-weight-display);
   color: var(--db-heading);
 `;
 

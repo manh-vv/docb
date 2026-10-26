@@ -11,9 +11,11 @@ const defaultTheme = themes.find(theme => theme.id === DEFAULT_THEME)!;
  */
 export const GlobalStyle = createGlobalStyle`
   :root {
-    --db-font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    --db-font-reading: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --db-font-ui: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --db-font-reading: var(--db-font-ui);
     --db-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    /* Large headings stay light, which gives the thin, sharp look */
+    --db-weight-display: 300;
 
     ${tokensToCss(defaultTheme.light)}
 

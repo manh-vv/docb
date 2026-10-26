@@ -104,7 +104,7 @@ const Title = styled.h2`
   margin: 0 0 8px;
   font-family: var(--db-font-reading);
   font-size: 26px;
-  font-weight: 600;
+  font-weight: var(--db-weight-display);
   letter-spacing: -0.01em;
   color: var(--db-heading);
 `;

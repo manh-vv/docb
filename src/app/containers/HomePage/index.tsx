@@ -167,9 +167,9 @@ const Title = styled.h1`
   margin: 0 0 16px;
   font-family: var(--db-font-reading);
   font-size: clamp(34px, 6vw, 54px);
-  font-weight: 600;
+  font-weight: var(--db-weight-display);
   line-height: 1.08;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.035em;
   color: var(--db-heading);
 `;
 

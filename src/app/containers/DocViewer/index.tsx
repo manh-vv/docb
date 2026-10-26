@@ -384,6 +384,6 @@ const EmptyTitle = styled.h1`
   margin: 0 0 8px;
   font-family: var(--db-font-reading);
   font-size: 32px;
-  font-weight: 600;
+  font-weight: var(--db-weight-display);
   color: var(--db-heading);
 `;
