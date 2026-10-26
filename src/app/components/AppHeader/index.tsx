@@ -11,6 +11,8 @@ import React, { Children, Fragment, memo, ReactNode } from 'react';
 import { Link } from 'react-router';
 import styled from 'styled-components';
 
+import { ColorModeSwitch } from '../ColorModeSwitch';
+
 interface Props {
   /** Breadcrumb entries after the brand, separated with a slash */
   crumbs?: ReactNode[];
@@ -40,7 +42,10 @@ export const AppHeader = memo(({ crumbs = [], actions }: Props) => {
         </Crumbs>
       )}
 
-      <Actions>{actions}</Actions>
+      <Actions>
+        {actions}
+        <ColorModeSwitch />
+      </Actions>
     </Bar>
   );
 });

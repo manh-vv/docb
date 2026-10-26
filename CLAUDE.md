@@ -65,7 +65,7 @@ All books share the one Dexie table, so menu item ids are scoped by book: `githu
 
 ### Styling
 
-Styles are styled-components plus Bootstrap 5.3 (grid, utilities, form controls, placeholders). Colors, fonts, radii and shadows are CSS variables (`--db-*`) defined in `src/styles/global-styles.ts`; components read only those tokens, never literal colors, so color modes and themes just redefine the variables. Fonts (Inter for UI, Source Serif 4 for reading, JetBrains Mono for code) load from Google Fonts in `index.html`. `MdViewer` holds the typography for the HTML GitHub's markdown API returns, and `AppHeader` is the shared top bar (breadcrumb `crumbs`, `actions` slot on the right).
+Styles are styled-components plus Bootstrap 5.3 (grid, utilities, form controls, placeholders). Colors, fonts, radii and shadows are CSS variables (`--db-*`) defined in `src/styles/global-styles.ts`; components read only those tokens, never literal colors, so color modes and themes just redefine the variables. Fonts (Inter for UI, Source Serif 4 for reading, JetBrains Mono for code) load from Google Fonts in `index.html`. Dark values of the same tokens live under `:root[data-bs-theme='dark']`. The color mode (`utils/colorMode.ts`, `ColorModeSwitch` in the header) is stored in localStorage as `docb:color-mode` (`light` | `dark` | `system`) and resolved onto `data-bs-theme` on `<html>`, which Bootstrap also reads; an inline script in `index.html` applies it before first paint, so keep the two in sync. `MdViewer` holds the typography for the HTML GitHub's markdown API returns, and `AppHeader` is the shared top bar (breadcrumb `crumbs`, `actions` slot on the right).
 
 ### Caching and GitHub access
 

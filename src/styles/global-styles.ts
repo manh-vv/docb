@@ -36,6 +36,28 @@ export const GlobalStyle = createGlobalStyle`
     --db-sidebar-width: 288px;
   }
 
+  :root[data-bs-theme='dark'] {
+    --db-bg: #111114;
+    --db-surface: #18181c;
+    --db-surface-muted: #1f1f24;
+    --db-border: #2a2a31;
+    --db-border-strong: #3b3b44;
+    --db-text: #d6d5dc;
+    --db-text-muted: #9998a4;
+    --db-heading: #f4f3f8;
+    --db-accent: #8f89ff;
+    --db-accent-hover: #a9a4ff;
+    --db-accent-soft: rgb(143 137 255 / 0.15);
+    --db-on-accent: #13112a;
+    --db-skeleton: #27272e;
+    --db-code-bg: #1c1c22;
+    --db-header-bg: rgb(17 17 20 / 0.8);
+    --db-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --db-shadow-lg: 0 18px 40px -18px rgb(0 0 0 / 0.75);
+
+    color-scheme: dark;
+  }
+
   html,
   body {
     height: 100%;

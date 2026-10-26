@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -13,6 +13,19 @@
     -->
     <link rel="manifest" href="/manifest.json" />
     <title>docb</title>
+
+    <script>
+      // Apply the color mode before first paint, see src/utils/colorMode.ts
+      (function () {
+        try {
+          var mode = localStorage.getItem('docb:color-mode');
+          var dark =
+            mode === 'dark' ||
+            (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+        } catch (e) {}
+      })();
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
