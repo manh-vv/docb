@@ -4,32 +4,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Docb is a frontend-only markdown reader: it lists a GitHub user's repositories, builds a sidebar menu from the `*.md` files in a chosen repository, and renders them. There is no backend; everything talks directly to the GitHub REST API from the browser. It is built on [react-boilerplate-cra-template](https://github.com/react-boilerplate/react-boilerplate-cra-template) (CRA 4, React 16, TypeScript, Redux Toolkit, redux-saga, styled-components, Bootstrap 5 beta).
+Docb is a frontend-only markdown reader: it lists a GitHub user's repositories, builds a sidebar menu from the `*.md` files in a chosen repository, and renders them. There is no backend; everything talks directly to the GitHub REST API from the browser. It started from [react-boilerplate-cra-template](https://github.com/react-boilerplate/react-boilerplate-cra-template) and now builds with Vite (React 19, React Router 8 in declarative mode, Redux Toolkit 2, redux-saga, styled-components 6, Bootstrap 5).
 
 ## Commands
 
-Package manager is yarn (`yarn.lock`).
+Package manager is yarn 1 (`yarn.lock`). Node version is in `.nvmrc` (24; jsdom needs 24.15+).
 
-- `yarn start`: dev server (`.env.local` sets `BROWSER=none`, so no browser opens)
-- `yarn build`: production build into `build/`
-- `yarn test`: Jest via react-scripts, in watch mode. Use `CI=true yarn test` for a single run.
-- Single test file: `CI=true yarn test src/store/__tests__/reducer.test.ts` (or `-t "<name>"` to filter by test name)
-- `yarn checkTs`: type check (`tsc --noEmit`)
-- `yarn lint` / `yarn lint:fix`: ESLint (react-app + prettier) over `src`
-- `yarn generate`: plop scaffolding for a new `component` or `container` (see below)
+- `yarn start`: Vite dev server at `http://localhost:5173/docb/`
+- `yarn build`: production build into `build/` (also writes `build/404.html`, see Deployment)
+- `yarn preview`: serve the production build
+- `yarn test`: Vitest (jsdom, globals on), watch mode in a terminal. `yarn test --run` for a single run.
+- Single test file: `yarn test --run src/store/__tests__/reducer.test.ts` (or `-t "<name>"` to filter by test name)
+- `yarn checkTs`: type check (`tsc --noEmit`). Vite does not type-check, so run this before building.
+- `yarn lint` / `yarn lint:fix`: ESLint 10 flat config (`eslint.config.mjs`: typescript-eslint, react-hooks, prettier) over `src`
+- `yarn generate`: plop scaffolding for a new `component` or `container` (see below). `yarn test:generators` generates every option combination, lints and type-checks them, then cleans up.
 - `yarn extract-messages`: scan for i18n keys into `src/locales`
 
-The husky pre-commit hook runs `yarn run checkTs` and then lint-staged (`eslint --fix` on `src/**/*.{ts,tsx,js,jsx}`, `prettier --write` on md/json). Prettier: 100 cols, single quotes, trailing commas, `arrowParens: avoid`.
+TypeScript is pinned to 6.0.x because typescript-eslint does not support TypeScript 7 yet.
 
-Deployment: GitHub Actions deploys `build/` to Firebase Hosting (project `docb-md`) on push to `main`, and a preview channel on each PR. `firebase.json` rewrites all routes to `index.html` for client-side routing.
+The husky pre-commit hook (`.husky/pre-commit`) runs `yarn run checkTs` and then lint-staged (`eslint --fix` on `src/**/*.{ts,tsx,js,jsx}`, `prettier --write` on md/json). Prettier: 100 cols, single quotes, trailing commas, `arrowParens: avoid`.
+
+Deployment: `.github/workflows/deploy.yml` checks, tests and builds every PR, and on push to `main` deploys `build/` to GitHub Pages at `https://manh-vv.github.io/docb/`. Because it is a project site, `vite.config.mts` sets `base: '/docb/'` and the router uses that as its `basename`, so in-app links must go through React Router (`Link`, `navigate`); a raw `<a href="/viewer/...">` skips the base and 404s. GitHub Pages has no rewrites, so the build copies `index.html` to `404.html` to boot the SPA on deep links.
 
 ## Architecture
 
 ### Imports and state wiring
 
-`tsconfig.json` sets `baseUrl: ./src`, so imports are absolute from `src` (`app/...`, `utils/...`, `store/...`, `types/...`).
+Imports are absolute from `src` (`app/...`, `utils/...`, `store/...`, `types/...`). That mapping lives in two places that must stay in sync: `paths` in `tsconfig.json` and the alias list in `vite.config.mts`. Adding a new top-level folder under `src/` means updating both.
 
-The store starts with no reducers. Each container injects its own slice and saga at render time with `useInjectReducer` / `useInjectSaga` from `utils/redux-injectors` (a typed wrapper around `redux-injectors`). Because of that, every slice key must also be declared manually in `src/types/RootState.ts`. The `// [IMPORT NEW CONTAINERSTATE ABOVE]` and `// [INSERT NEW REDUCER KEY ABOVE]` marker comments are used by the plop container generator; keep them intact.
+The store starts with no reducers (root state `{}`). Each container injects its own slice and saga with `useInjectReducer` / `useInjectSaga` from `utils/redux-injectors` (a typed wrapper around `redux-injectors`). Injection happens in a layout effect, after the container's first render, so selectors must fall back to the slice's `initialState` (`state.key || initialState`). Because of that, every slice key must also be declared manually in `src/types/RootState.ts`. The `// [IMPORT NEW CONTAINERSTATE ABOVE]` and `// [INSERT NEW REDUCER KEY ABOVE]` marker comments are used by the plop container generator; keep them intact.
 
 A container follows the boilerplate layout: `index.tsx`, `slice.ts`, `saga.ts`, `selectors.ts`, `types.ts`, `messages.ts`, `Loadable.ts`. Slices use the `createSlice` wrapper in `utils/@reduxjs/toolkit` (which constrains `name` to a `RootState` key), except `DocViewer/slice.ts`, which imports it from `@reduxjs/toolkit` directly. Many slice reducers are empty and exist only as action types that sagas listen for (e.g. `openBook`, `fetchBigChapter`, `fetchBookCollection`); the saga does the work and dispatches a real state-updating action.
 
@@ -38,7 +41,7 @@ A container follows the boilerplate layout: `index.tsx`, `slice.ts`, `saga.ts`, 
 Routes are in `src/app/index.tsx`. The code uses a "library / book / chapter" metaphor:
 
 - `/` (`HomePage`): enter a GitHub username (remembered in localStorage) plus a few hardcoded featured orgs.
-- `/viewer/:provider/:username`: the user is a "library"; `DocViewer` renders `BookCollection`, a paginated list of the user's repos.
+- `/viewer/:provider/:username` (one route with optional `:repository?/:base64FilePath?` segments): the user is a "library"; `DocViewer` renders `BookCollection`, a paginated list of the user's repos.
 - `/viewer/:provider/:username/:repository`: a repo is a "book"; the sidebar is built from its markdown files.
 - `/viewer/:provider/:username/:repository/:base64FilePath`: an md file is a "chapter". The path segment is `encodeURIComponent(btoa(filePath))`.
 
@@ -56,6 +59,7 @@ Menu tree storage is split in two:
 
 - The full tree (`MenuItem` with `parentId` / `childIds`, types `branch` | `file` | `hash`) lives in IndexedDB via Dexie (`src/store/db.ts`, table `menuItems`).
 - Redux `menuItems` holds only the currently visible, flattened list. Expanding a node queries Dexie for children (`findChildItems`) and splices them in after the parent (`showChildItems`); collapsing removes descendants (`hideChildItems`). `SidebarMenu` renders this flat list using `level` for indentation.
+- Sidebar clicks go through an `actionChannel` (`watchClickOnMenuItem`) so they are handled one at a time, and `handleClickOnMenuItem` toggles from the item in the store, not the possibly stale click payload. `showChildItems` is a no-op if the parent is collapsed or its children are already shown. Overlapping clicks used to duplicate children or show them under a collapsed parent.
 
 Menu item IDs are raw file paths (leaves) or single path segments (branches), and the Dexie database is not scoped per repository.
 
@@ -63,8 +67,8 @@ Menu item IDs are raw file paths (leaves) or single path segments (branches), an
 
 - `utils/githubApi` wraps `utils/fetchCache`, which caches JSON responses in **sessionStorage**, keyed by URL plus a sha256 of the request options.
 - The markdown-to-HTML conversion caches in **localStorage** instead (`githupConverter` in the DocViewer saga).
-- All GitHub calls are unauthenticated, so they are subject to GitHub's anonymous rate limits.
+- All GitHub calls are unauthenticated, so they are subject to GitHub's anonymous rate limits. GitHub's `/search/code` endpoint now requires authentication (it returns 401), so `fetchBigChapter` currently fails against the real API.
 
 ### Tests
 
-Only boilerplate tests exist (`src/locales`, `src/store`, `src/styles`). `package.json` declares a 90% global coverage threshold, which the current code does not meet, so `yarn test --coverage` will fail on thresholds.
+Tests are mostly the boilerplate ones (`src/locales`, `src/store`, `src/styles`), plus `DocViewer/__tests__/handleClickOnMenuItem.test.ts`, which runs the real slice and saga with `store/db` mocked by `vi.mock`. `vite.config.mts` keeps the old 90% global coverage threshold, which the current code does not meet, so `yarn test --run --coverage` fails on thresholds.
