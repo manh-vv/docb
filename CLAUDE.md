@@ -21,7 +21,7 @@ Package manager is yarn (`yarn.lock`).
 
 The husky pre-commit hook runs `yarn run checkTs` and then lint-staged (`eslint --fix` on `src/**/*.{ts,tsx,js,jsx}`, `prettier --write` on md/json). Prettier: 100 cols, single quotes, trailing commas, `arrowParens: avoid`.
 
-Deployment: GitHub Actions deploys `build/` to Firebase Hosting (project `docb-md`) on push to `master`, and a preview channel on each PR. `firebase.json` rewrites all routes to `index.html` for client-side routing.
+Deployment: GitHub Actions deploys `build/` to Firebase Hosting (project `docb-md`) on push to `main`, and a preview channel on each PR. `firebase.json` rewrites all routes to `index.html` for client-side routing.
 
 ## Architecture
 
