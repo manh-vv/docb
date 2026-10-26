@@ -1,22 +1,32 @@
 {
   "compilerOptions": {
     "noImplicitAny": false,
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["vitest/globals"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
-    "jsx": "react",
-    "baseUrl": "./src"
+    "jsx": "react-jsx",
+    "paths": {
+      "app": ["./src/app"],
+      "app/*": ["./src/app/*"],
+      "locales/*": ["./src/locales/*"],
+      "store/*": ["./src/store/*"],
+      "styles/*": ["./src/styles/*"],
+      "types": ["./src/types"],
+      "types/*": ["./src/types/*"],
+      "utils/*": ["./src/utils/*"]
+    }
   },
   "include": ["src"]
 }

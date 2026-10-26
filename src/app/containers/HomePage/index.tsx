@@ -4,7 +4,7 @@ import { Card } from 'app/components/Card';
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import getStorage from 'utils/getStorage';
 import keepTextLength from 'utils/keepTextLength';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
@@ -20,18 +20,15 @@ export function HomePage() {
   const githubUsers = useSelector(selectGithubUsers);
   const dispatch = useDispatch();
 
-  const [username, setUsername] = useState<string>('');
   const provider = 'github';
-  const history = useHistory();
-  const timeoutRef = useRef<any>();
+  // get githup id from local storage
+  const [username, setUsername] = useState<string>(
+    () => getStorage(true).getItem(`${provider}/username`) || '',
+  );
+  const navigate = useNavigate();
+  const timeoutRef = useRef<any>(null);
 
   useEffect(() => {
-    // get githup id from local storage
-    const lastUsername = getStorage(true).getItem(`${provider}/username`);
-    if (lastUsername) {
-      setUsername(lastUsername);
-    }
-
     dispatch(homePageActions.initHomePage());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -45,7 +42,7 @@ export function HomePage() {
   }
 
   function openViewer(username: string) {
-    history.push(`/viewer/${provider}/${username}`);
+    navigate(`/viewer/${provider}/${username}`);
   }
 
   function handleSubmit(e) {

@@ -4,8 +4,8 @@ import { BookCollection } from 'app/containers/BookCollection';
 import React, { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useParams } from 'react-router-dom';
-import styled from 'styled-components/macro';
+import { Link, useParams } from 'react-router';
+import styled from 'styled-components';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
 import { docViewerSaga } from './saga';
@@ -15,8 +15,8 @@ import { docViewerActions as actions, reducer, sliceKey } from './slice';
 interface PathParams {
   provider: string;
   username: string;
-  repository: string;
-  base64FilePath: string;
+  repository?: string;
+  base64FilePath?: string;
 }
 /**
  * Flow of loading:
@@ -48,7 +48,12 @@ export function DocViewer() {
 
   const dispatch = useDispatch();
 
-  const { provider, username, repository, base64FilePath } = useParams<PathParams>();
+  const {
+    provider = '',
+    username = '',
+    repository,
+    base64FilePath,
+  } = useParams<keyof PathParams>();
 
   useEffect(() => {
     if (repository) {

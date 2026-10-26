@@ -2,8 +2,8 @@ import { BookCollectionView } from 'app/components/BookCollectionView';
 import { Pagination } from 'app/components/Pagination';
 import React, { memo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useHistory, useLocation } from 'react-router-dom';
-import styled from 'styled-components/macro';
+import { useLocation, useNavigate } from 'react-router';
+import styled from 'styled-components';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 import removeLastSlash from 'utils/removeLastSlash';
 import useQueryParams from 'utils/useQueryParams';
@@ -37,8 +37,8 @@ export const BookCollection = memo((props: Props) => {
   const dispatch = useDispatch();
 
   const { provider, username, onSelect } = props;
-  const history = useHistory();
-  const location = useLocation<Location>();
+  const navigate = useNavigate();
+  const location = useLocation();
   const usp = useQueryParams();
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export const BookCollection = memo((props: Props) => {
   }, [provider, username]);
 
   function handleOnSelect(item) {
-    history.push(`${removeLastSlash(location.pathname)}/${item.name}`);
+    navigate(`${removeLastSlash(location.pathname)}/${item.name}`);
   }
 
   function onNextPage() {

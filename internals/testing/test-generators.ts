@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import fs from 'fs';
-import rimraf from 'rimraf';
+import { rimrafSync } from 'rimraf';
 import shell from 'shelljs';
 import path from 'path';
 import nodePlop from 'node-plop';
@@ -18,9 +18,8 @@ interface PlopGenerator extends PG {
 
 process.chdir(path.join(__dirname, '../generators'));
 
-const plop = nodePlop('./plopfile.ts');
-const componentGen = plop.getGenerator('component') as PlopGenerator;
-const containerGen = plop.getGenerator('container') as PlopGenerator;
+let componentGen: PlopGenerator;
+let containerGen: PlopGenerator;
 
 const NAMESPACE = 'RbGenerated';
 
@@ -29,7 +28,7 @@ const containersPath = path.join(process.cwd(), '../../src/app/containers');
 const rootStatePath = path.join(process.cwd(), '../../src/types/RootState.ts');
 
 function runLinting() {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     shell.exec(
       `yarn run lint`,
       {
@@ -41,7 +40,7 @@ function runLinting() {
 }
 
 function checkTypescript() {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     shell.exec(
       `yarn run checkTs`,
       {
@@ -53,11 +52,11 @@ function checkTypescript() {
 }
 
 function removeComponent(name: string) {
-  return rimraf.sync(path.join(componentsPath, name));
+  return rimrafSync(path.join(componentsPath, name));
 }
 
 function removeContainer(name: string) {
-  return rimraf.sync(path.join(containersPath, name));
+  return rimrafSync(path.join(containersPath, name));
 }
 
 async function handleResult({
@@ -188,6 +187,10 @@ async function generateContainer() {
  * Run
  */
 (async function () {
+  const plop = await nodePlop('./plopfile.ts');
+  componentGen = plop.getGenerator('component') as PlopGenerator;
+  containerGen = plop.getGenerator('container') as PlopGenerator;
+
   const componentCleanup = await generateComponent().catch(reason => {
     reportErrors(reason);
     return [];

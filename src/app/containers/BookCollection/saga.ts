@@ -35,5 +35,5 @@ export function* fetchBookCollection(action: PayloadAction<FetchBookPayload>) {
 }
 
 export function* bookCollectionSaga() {
-  yield takeLatest(actions.fetchBookCollection, fetchBookCollection);
+  yield takeLatest(actions.fetchBookCollection.type, fetchBookCollection);
 }

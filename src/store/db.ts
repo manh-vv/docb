@@ -1,8 +1,8 @@
-import Dexie from 'dexie';
+import Dexie, { Table } from 'dexie';
 import { MenuItem } from 'types/MenuItem';
 
 class MenuItemDatabase extends Dexie {
-  public menuItems: Dexie.Table<MenuItem, string>;
+  public menuItems: Table<MenuItem, string>;
 
   constructor() {
     super('menu-items-postfix');

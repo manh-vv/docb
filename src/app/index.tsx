@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTranslation } from 'react-i18next';
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router';
 import { GlobalStyle } from 'styles/global-styles';
 
 import { NotFoundPage } from './components/NotFoundPage/Loadable';
@@ -27,31 +27,24 @@ export function App() {
         <meta name="description" content="a markdown reader" />
       </Helmet>
 
-      <Switch>
-        <Route exact path="/" component={HomePage} />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
 
         {/**
          * Provider can be: github, gitlab
          * Each username is a library which contains many collection of books
-         */}
-        <Route exact path="/viewer/:provider/:username" component={DocViewer} />
-
-        {/* Each repository is a collection which is a folder */}
-        <Route exact path="/viewer/:provider/:username/:repository" component={DocViewer} />
-
-        {/**
+         * Each repository is a collection which is a folder
          * Each collection has one or many markdown files
          * Each file is a chapter
          * Each files contains one or may sub chapters
          */}
         <Route
-          exact
-          path="/viewer/:provider/:username/:repository/:base64FilePath"
-          component={DocViewer}
+          path="/viewer/:provider/:username/:repository?/:base64FilePath?"
+          element={<DocViewer />}
         />
 
-        <Route component={NotFoundPage} />
-      </Switch>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
       <GlobalStyle />
     </BrowserRouter>
   );

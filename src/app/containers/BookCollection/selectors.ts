@@ -3,12 +3,7 @@ import { RootState } from 'types';
 
 import { initialState } from './slice';
 
-const selectDomain = (state: RootState) => state.bookCollection || initialState;
-
-export const selectBookCollection = createSelector(
-  [selectDomain],
-  bookCollectionState => bookCollectionState,
-);
+export const selectBookCollection = (state: RootState) => state.bookCollection || initialState;
 export const selectCurPage = createSelector(selectBookCollection, state => state.curPage);
 export const selectTotalPage = createSelector(selectBookCollection, state => state.totalPage);
 export const selectHasNext = createSelector(selectBookCollection, state => state.hasNext);

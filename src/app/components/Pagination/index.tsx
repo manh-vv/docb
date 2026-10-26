@@ -1,8 +1,7 @@
 import React, { memo } from 'react';
 
 type OnClick =
-  | ((event: React.MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => void)
-  | undefined;
+  ((event: React.MouseEvent<HTMLDivElement, globalThis.MouseEvent>) => void) | undefined;
 
 interface Props {
   perPage?: number;

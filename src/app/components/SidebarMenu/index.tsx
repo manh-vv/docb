@@ -1,10 +1,10 @@
 import React, { memo } from 'react';
-import { Link } from 'react-router-dom';
-import styled from 'styled-components/macro';
+import { Link } from 'react-router';
+import styled from 'styled-components';
 import { MenuItem } from 'types/MenuItem';
 import keepTextLength from 'utils/keepTextLength';
 
-import { ReactComponent as Arrow } from './assets/arrow.svg';
+import Arrow from './assets/arrow.svg?react';
 
 /**
  *
@@ -88,7 +88,7 @@ const MenuItemDiv = styled.div`
   font-size: 0.929em;
   padding: 12.5px 20px;
 
-  :hover {
+  &:hover {
     background-color: #ededed;
   }
 `;
@@ -100,7 +100,7 @@ const MenuItemContent = styled.a`
 const Svg = styled(Arrow)`
   height: 1.5em;
   width: 1.5em;
-  :hover {
+  &:hover {
     cursor: pointer;
     background-color: #dddddd;
   }
