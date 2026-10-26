@@ -7,6 +7,7 @@ export interface BookCollectionState {
   hasBack: boolean;
   total: number;
   items: any[];
+  loading: boolean;
 }
 
 export type ContainerState = BookCollectionState;

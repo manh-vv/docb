@@ -22,16 +22,21 @@ export function* fetchBookCollection(action: PayloadAction<FetchBookPayload>) {
   usp.append('per_page', `${per_page}`);
 
   const queryStr = `?${usp.toString()}`;
-  const res = yield call(githubApi, `/users/${username}/repos${queryStr}`);
-  window.history.replaceState(null, '', queryStr);
+  try {
+    const res = yield call(githubApi, `/users/${username}/repos${queryStr}`);
+    window.history.replaceState(null, '', queryStr);
 
-  yield put(
-    actions.success({
-      curPage: nextPage,
-      perPage: per_page,
-      items: res,
-    }),
-  );
+    yield put(
+      actions.success({
+        curPage: nextPage,
+        perPage: per_page,
+        // an unknown user or a rate limit comes back as an error object
+        items: Array.isArray(res) ? res : [],
+      }),
+    );
+  } catch {
+    yield put(actions.failure());
+  }
 }
 
 export function* bookCollectionSaga() {

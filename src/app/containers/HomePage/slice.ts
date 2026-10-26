@@ -6,6 +6,7 @@ import { ContainerState } from './types';
 // The initial state of the HomePage container
 export const initialState: ContainerState = {
   githubUsers: [],
+  loading: false,
 };
 
 const homePageSlice = createSlice({
@@ -14,9 +15,11 @@ const homePageSlice = createSlice({
   reducers: {
     initHomePage(state) {
       state.githubUsers = [];
+      state.loading = true;
     },
     githubUsers(state, action: PayloadAction<any>) {
       state.githubUsers = action.payload;
+      state.loading = false;
     },
   },
 });

@@ -6,6 +6,8 @@ import { initialState } from './slice';
 export const selectDocViewer = (state: RootState) => state.docViewer || initialState;
 export const selectMenuItems = createSelector(selectDocViewer, state => state.menuItems);
 export const selectHtmlContent = createSelector(selectDocViewer, state => state.htmlContent);
+export const selectMenuLoading = createSelector(selectDocViewer, state => state.menuLoading);
+export const selectContentLoading = createSelector(selectDocViewer, state => state.contentLoading);
 export const selectSelectedBook = createSelector(selectDocViewer, state => state.selectedBook);
 export const selectLastActiveMenuItem = createSelector(
   selectDocViewer,

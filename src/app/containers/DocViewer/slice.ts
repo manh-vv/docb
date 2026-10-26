@@ -14,6 +14,8 @@ import {
 export const initialState: ContainerState = {
   htmlContent: '',
   menuItems: [],
+  menuLoading: false,
+  contentLoading: false,
 };
 
 const docViewerSlice = createSlice({
@@ -25,8 +27,12 @@ const docViewerSlice = createSlice({
     updateSelectedBook(state, action: PayloadAction<any>) {
       state.selectedBook = action.payload;
     },
-    fetchBigChapter(state, action: PayloadAction<FetchBigChapter>) {},
-    fetchMdContent(state, action: PayloadAction<FetchMdContent>) {},
+    fetchBigChapter(state, action: PayloadAction<FetchBigChapter>) {
+      state.menuLoading = true;
+    },
+    fetchMdContent(state, action: PayloadAction<FetchMdContent>) {
+      state.contentLoading = true;
+    },
     convertMdToHtml(state, action: PayloadAction<string>) {},
     buildMenuItemsFromHtml() {},
     handleClickOnMenuItem(state, action: PayloadAction<MenuItem>) {},
@@ -102,9 +108,11 @@ const docViewerSlice = createSlice({
     },
     updateHtmlContent(state, action: PayloadAction<string>) {
       state.htmlContent = action.payload;
+      state.contentLoading = false;
     },
     updateMenuItems(state, action: PayloadAction<MenuItem[]>) {
       state.menuItems = action.payload;
+      state.menuLoading = false;
     },
   },
 });

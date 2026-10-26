@@ -1,3 +1,4 @@
+import { LoadingLines } from 'app/components/Loading';
 import { MdViewer } from 'app/components/MdViewer/Loadable';
 import { SidebarMenu } from 'app/components/SidebarMenu/Loadable';
 import { BookCollection } from 'app/containers/BookCollection';
@@ -9,7 +10,12 @@ import styled from 'styled-components';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
 import { docViewerSaga } from './saga';
-import { selectHtmlContent, selectMenuItems } from './selectors';
+import {
+  selectContentLoading,
+  selectHtmlContent,
+  selectMenuItems,
+  selectMenuLoading,
+} from './selectors';
 import { docViewerActions as actions, reducer, sliceKey } from './slice';
 
 interface PathParams {
@@ -45,6 +51,8 @@ export function DocViewer() {
 
   const menuItems = useSelector(selectMenuItems);
   const htmlContent = useSelector(selectHtmlContent);
+  const menuLoading = useSelector(selectMenuLoading);
+  const contentLoading = useSelector(selectContentLoading);
 
   const dispatch = useDispatch();
 
@@ -105,14 +113,24 @@ export function DocViewer() {
         </Header>
 
         <Container2>
-          <Menu>
-            <SidebarMenu menuItems={menuItems} onSelect={handleSelectMenu} />
+          <Menu aria-busy={menuLoading}>
+            {menuLoading ? (
+              <MenuPlaceholder>
+                <LoadingLines lines={6} label="Loading files" />
+              </MenuPlaceholder>
+            ) : (
+              <SidebarMenu menuItems={menuItems} onSelect={handleSelectMenu} />
+            )}
           </Menu>
 
           <Container3>
             <Content>
               {repository ? (
-                htmlContent ? (
+                contentLoading ? (
+                  <ContentPlaceholder aria-busy="true">
+                    <LoadingLines lines={10} label="Loading chapter" />
+                  </ContentPlaceholder>
+                ) : htmlContent ? (
                   <MdViewer
                     id="id-md-viewer"
                     htmlContent={htmlContent}
@@ -154,6 +172,16 @@ const Menu = styled.div`
   flex-basis: 20%;
   border-right: 1px solid #ddd;
   overflow: auto;
+`;
+
+const MenuPlaceholder = styled.div`
+  padding: 12.5px 20px;
+`;
+
+const ContentPlaceholder = styled.div`
+  max-width: 800px;
+  margin: 1.5em 2em 1em 2.5em;
+  padding: 2em 1.2em 1.2em 1.6em;
 `;
 
 const Container3 = styled.div`

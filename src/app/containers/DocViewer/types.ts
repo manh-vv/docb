@@ -31,6 +31,8 @@ export interface DocViewerState {
   menuItems: MenuItem[];
   selectedBook?: SelectedBook;
   lastActiveMenuItem?: MenuItem;
+  menuLoading: boolean;
+  contentLoading: boolean;
 }
 
 export type ContainerState = DocViewerState;

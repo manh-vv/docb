@@ -1,6 +1,7 @@
 import { faFish } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Card } from 'app/components/Card';
+import { LoadingBox, LoadingLines } from 'app/components/Loading';
 import React, { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,7 +11,7 @@ import keepTextLength from 'utils/keepTextLength';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
 import { homePageSaga } from './saga';
-import { selectGithubUsers } from './selectors';
+import { selectGithubUsers, selectLoading } from './selectors';
 import { homePageActions, reducer, sliceKey } from './slice';
 
 export function HomePage() {
@@ -18,6 +19,7 @@ export function HomePage() {
   useInjectSaga({ key: sliceKey, saga: homePageSaga });
 
   const githubUsers = useSelector(selectGithubUsers);
+  const loading = useSelector(selectLoading);
   const dispatch = useDispatch();
 
   const provider = 'github';
@@ -93,7 +95,18 @@ export function HomePage() {
 
         <br />
 
-        <div className="row">
+        <div className="row" aria-busy={loading}>
+          {loading &&
+            Array.from({ length: 4 }, (_, i) => (
+              <div key={i} className="col-md-3 col-sm-12">
+                <div className="card">
+                  <LoadingBox className="card-img-top" style={{ aspectRatio: '1' }} />
+                  <div className="card-body">
+                    <LoadingLines lines={2} label="Loading featured accounts" />
+                  </div>
+                </div>
+              </div>
+            ))}
           {githubUsers.map(u => (
             <div key={u.id} className="col-md-3 col-sm-12">
               <Card

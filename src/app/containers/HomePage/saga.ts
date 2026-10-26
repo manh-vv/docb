@@ -6,12 +6,16 @@ import { homePageActions as actions } from './slice';
 export function* init() {
   // get users
   const users = ['google', 'microsoft', 'facebook', 'aws'];
-  const gUsers = yield call(
-    [Promise, 'all'],
-    users.map(user => githubApi(`/users/${user}`)),
-  );
-
-  yield put(actions.githubUsers(gUsers));
+  try {
+    const gUsers = yield call(
+      [Promise, 'all'],
+      users.map(user => githubApi(`/users/${user}`)),
+    );
+    // a failed lookup (e.g. rate limited) comes back as an error object without an id
+    yield put(actions.githubUsers(gUsers.filter(u => u && u.id)));
+  } catch {
+    yield put(actions.githubUsers([]));
+  }
 }
 
 export function* homePageSaga() {

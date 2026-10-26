@@ -61,9 +61,15 @@ export function* fetchMdContent(action) {
     return;
   }
 
-  const { content } = yield call(fetchMdContentHelper, menuItem.url);
-
-  yield put(actions.convertMdToHtml(atob(content)));
+  try {
+    const { content } = yield call(fetchMdContentHelper, menuItem.url);
+    if (!content) {
+      throw new Error('no file content'); // e.g. rate limited
+    }
+    yield put(actions.convertMdToHtml(atob(content)));
+  } catch {
+    yield put(actions.updateHtmlContent(''));
+  }
 }
 
 function githupConverter(mdContent: string): Promise<string> {
@@ -96,7 +102,12 @@ function githupConverter(mdContent: string): Promise<string> {
 
 export function* convertMdToHtml(action) {
   const { payload } = action;
-  const htmlContent = yield call(githupConverter, payload);
+  let htmlContent = '';
+  try {
+    htmlContent = yield call(githupConverter, payload);
+  } catch {
+    // leave the reader empty rather than stuck loading
+  }
 
   yield put(actions.updateHtmlContent(htmlContent));
 }
@@ -178,7 +189,12 @@ export function* fetchBigChapter(action) {
 
   // List files with the git trees API: unlike code search, it works without authentication.
   // An empty repository or a failed request has no `tree`, which leaves the menu empty.
-  const res = yield call(githubApi, `/repos/${username}/${repository}/git/trees/HEAD?recursive=1`);
+  let res;
+  try {
+    res = yield call(githubApi, `/repos/${username}/${repository}/git/trees/HEAD?recursive=1`);
+  } catch {
+    res = {};
+  }
   const mdFiles = (res.tree || [])
     .filter(({ type, path }) => type === 'blob' && /\.md$/i.test(path))
     .map(({ path, url }) => ({ name: path.split('/').pop(), path, git_url: url }));

@@ -1,4 +1,5 @@
 import { BookCollectionView } from 'app/components/BookCollectionView';
+import { LoadingBox } from 'app/components/Loading';
 import { Pagination } from 'app/components/Pagination';
 import React, { memo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -14,6 +15,7 @@ import {
   selectCurPage,
   selectHasBack,
   selectHasNext,
+  selectLoading,
   selectTotalPage,
 } from './selectors';
 import { bookCollectionActions as actions, reducer, sliceKey } from './slice';
@@ -33,6 +35,7 @@ export const BookCollection = memo((props: Props) => {
   const hasBack = useSelector(selectHasBack);
   const curPage = useSelector(selectCurPage);
   const totalPage = useSelector(selectTotalPage);
+  const loading = useSelector(selectLoading);
 
   const dispatch = useDispatch();
 
@@ -71,8 +74,11 @@ export const BookCollection = memo((props: Props) => {
     <div className="container-fluid">
       <div className="row">
         <div className="col">
-          <Div>
-            {bookCollection.total > 0 &&
+          <Div aria-busy={loading}>
+            {loading && <span className="visually-hidden">Loading books</span>}
+            {loading && Array.from({ length: 12 }, (_, i) => <BookPlaceholder key={i} />)}
+            {!loading &&
+              bookCollection.total > 0 &&
               bookCollection.items.map(item => (
                 <BookCollectionView
                   key={item.id}
@@ -98,6 +104,13 @@ export const BookCollection = memo((props: Props) => {
     </div>
   );
 });
+
+const BookPlaceholder = styled(LoadingBox)`
+  width: 160px;
+  height: 240px;
+  margin-bottom: 1em;
+  margin-left: 1.5em;
+`;
 
 const Div = styled.div`
   display: flex;
