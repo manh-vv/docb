@@ -3,16 +3,14 @@ import { LoadingBox } from 'app/components/Loading';
 import { Pagination } from 'app/components/Pagination';
 import React, { memo, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import styled from 'styled-components';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 import removeLastSlash from 'utils/removeLastSlash';
-import useQueryParams from 'utils/useQueryParams';
 
 import { bookCollectionSaga } from './saga';
 import {
   selectBookCollection,
-  selectCurPage,
   selectHasBack,
   selectHasNext,
   selectLoading,
@@ -33,7 +31,6 @@ export const BookCollection = memo((props: Props) => {
   const bookCollection = useSelector(selectBookCollection);
   const hasNext = useSelector(selectHasNext);
   const hasBack = useSelector(selectHasBack);
-  const curPage = useSelector(selectCurPage);
   const totalPage = useSelector(selectTotalPage);
   const loading = useSelector(selectLoading);
 
@@ -42,32 +39,32 @@ export const BookCollection = memo((props: Props) => {
   const { provider, username, onSelect } = props;
   const navigate = useNavigate();
   const location = useLocation();
-  const usp = useQueryParams();
+  // the page lives in the URL, so every page is a history entry
+  const [searchParams, setSearchParams] = useSearchParams();
+  const curPage = Math.max(1, Math.floor(Number(searchParams.get('page'))) || 1);
 
   useEffect(() => {
-    const page = usp.get('page');
-    let nextPage = curPage;
-    if (page) {
-      nextPage = +page;
-    }
-    dispatch(actions.fetchBookCollection({ provider, username, nextPage }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider, username]);
+    dispatch(actions.fetchBookCollection({ provider, username, nextPage: curPage }));
+  }, [dispatch, provider, username, curPage]);
 
   function handleOnSelect(item) {
     navigate(`${removeLastSlash(location.pathname)}/${item.name}`);
   }
 
+  function goToPage(page: number) {
+    setSearchParams({ page: `${page}` });
+  }
+
   function onNextPage() {
-    dispatch(actions.fetchBookCollection({ provider, username, nextPage: curPage + 1 }));
+    goToPage(curPage + 1);
   }
 
   function onBackPage() {
-    dispatch(actions.fetchBookCollection({ provider, username, nextPage: curPage - 1 }));
+    goToPage(curPage - 1);
   }
 
   function onChoosePage(page) {
-    dispatch(actions.fetchBookCollection({ provider, username, nextPage: page }));
+    goToPage(page);
   }
 
   return (

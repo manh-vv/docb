@@ -12,6 +12,14 @@ export interface BookCollectionState {
 
 export type ContainerState = BookCollectionState;
 
+export interface FetchBookSuccess {
+  curPage: number;
+  perPage: number;
+  items: any[];
+  /** public repositories of the account, when known */
+  repoCount?: number;
+}
+
 export interface FetchBookPayload {
   provider: string;
   username: string;

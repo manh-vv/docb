@@ -2,7 +2,7 @@ import { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from 'utils/@reduxjs/toolkit';
 import { PER_PAGE } from 'utils/constants';
 
-import { ContainerState, FetchBookPayload } from './types';
+import { ContainerState, FetchBookPayload, FetchBookSuccess } from './types';
 
 export const initialState: ContainerState = {
   perPage: PER_PAGE,
@@ -25,19 +25,23 @@ const bookCollectionSlice = createSlice({
     failure(state) {
       state.loading = false;
     },
-    success(state, action: PayloadAction<{ curPage: number; perPage: number; items: any[] }>) {
-      const { items, curPage, perPage } = action.payload;
+    success(state, action: PayloadAction<FetchBookSuccess>) {
+      const { items, curPage, perPage, repoCount } = action.payload;
 
       state.total = items.length;
       state.items = items;
       state.loading = false;
       state.perPage = perPage;
       state.curPage = curPage;
-      state.hasNext = state.total >= state.perPage;
       state.hasBack = state.curPage > 1;
 
-      if (curPage > state.totalPage) {
-        state.totalPage = curPage;
+      if (repoCount !== undefined) {
+        state.totalPage = Math.max(1, Math.ceil(repoCount / perPage));
+        state.hasNext = curPage < state.totalPage;
+      } else {
+        // without the repo count, a full page means there may be another one
+        state.hasNext = state.total >= state.perPage;
+        state.totalPage = curPage + (state.hasNext ? 1 : 0);
       }
     },
   },
