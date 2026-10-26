@@ -40,7 +40,7 @@ A container follows the boilerplate layout: `index.tsx`, `slice.ts`, `saga.ts`, 
 
 Routes are in `src/app/index.tsx`. The code uses a "library / book / chapter" metaphor:
 
-- `/` (`HomePage`): enter a GitHub username (remembered in localStorage) plus a few hardcoded featured orgs.
+- `/` (`HomePage`): enter a GitHub username (remembered in localStorage) plus a few hardcoded featured orgs. Signed in users also get a "Your libraries" section above them: their own account (`/user`) and their organizations (`/user/orgs`).
 - `/viewer/:provider/:username` (one route with optional `:repository?/:base64FilePath?` segments): the user is a "library"; `DocViewer` renders `BookCollection`, a paginated list of the user's repos.
 - `/viewer/:provider/:username/:repository`: a repo is a "book"; the sidebar is built from its markdown files.
 - `/viewer/:provider/:username/:repository/:base64FilePath`: an md file is a "chapter". The path segment is `encodeURIComponent(btoa(filePath))`.

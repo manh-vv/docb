@@ -7,6 +7,8 @@ import { ContainerState } from './types';
 export const initialState: ContainerState = {
   githubUsers: [],
   loading: false,
+  myAccounts: [],
+  myAccountsLoading: false,
 };
 
 const homePageSlice = createSlice({
@@ -20,6 +22,14 @@ const homePageSlice = createSlice({
     githubUsers(state, action: PayloadAction<any>) {
       state.githubUsers = action.payload;
       state.loading = false;
+    },
+    fetchMyAccounts(state) {
+      state.myAccounts = [];
+      state.myAccountsLoading = true;
+    },
+    myAccounts(state, action: PayloadAction<any[]>) {
+      state.myAccounts = action.payload;
+      state.myAccountsLoading = false;
     },
   },
 });

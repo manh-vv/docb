@@ -10,11 +10,17 @@ import { useNavigate } from 'react-router';
 import styled from 'styled-components';
 import { compact } from 'styles/media';
 import getStorage from 'utils/getStorage';
+import { useGithubAuth } from 'utils/githubAuth';
 import pageTitle from 'utils/pageTitle';
 import { useInjectReducer, useInjectSaga } from 'utils/redux-injectors';
 
 import { homePageSaga } from './saga';
-import { selectGithubUsers, selectLoading } from './selectors';
+import {
+  selectGithubUsers,
+  selectLoading,
+  selectMyAccounts,
+  selectMyAccountsLoading,
+} from './selectors';
 import { homePageActions, reducer, sliceKey } from './slice';
 
 export function HomePage() {
@@ -23,6 +29,9 @@ export function HomePage() {
 
   const githubUsers = useSelector(selectGithubUsers);
   const loading = useSelector(selectLoading);
+  const myAccounts = useSelector(selectMyAccounts);
+  const myAccountsLoading = useSelector(selectMyAccountsLoading);
+  const auth = useGithubAuth();
   const dispatch = useDispatch();
 
   const provider = 'github';
@@ -37,6 +46,11 @@ export function HomePage() {
     dispatch(homePageActions.initHomePage());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // signing in or out in another tab does not reload this one
+  useEffect(() => {
+    dispatch(homePageActions.fetchMyAccounts());
+  }, [dispatch, auth?.login]);
 
   function onChangeUsername(e) {
     setUsername(e.target.value);
@@ -104,29 +118,61 @@ export function HomePage() {
           <Hint id="github-id-help">The name in a GitHub profile URL, for example facebook.</Hint>
         </Hero>
 
-        <section aria-labelledby="featured-title">
+        {auth && (
+          <Section aria-labelledby="mine-title">
+            <SectionTitle id="mine-title">Your libraries</SectionTitle>
+            <AccountGrid
+              accounts={myAccounts}
+              loading={myAccountsLoading}
+              placeholders={2}
+              label="Loading your accounts"
+            />
+          </Section>
+        )}
+
+        <Section aria-labelledby="featured-title">
           <SectionTitle id="featured-title">Featured libraries</SectionTitle>
-          <Grid aria-busy={loading}>
-            {loading &&
-              Array.from({ length: 4 }, (_, i) => (
-                <PlaceholderCard key={i}>
-                  <LoadingBox style={{ width: 52, height: 52 }} />
-                  <LoadingLines lines={3} label="Loading featured accounts" />
-                </PlaceholderCard>
-              ))}
-            {githubUsers.map(u => (
-              <Card
-                key={u.id}
-                name={u.name || u.login}
-                desc={u.bio || `@${u.login}`}
-                img={u.avatar_url}
-                href={`/viewer/${provider}/${u.login}`}
-              />
-            ))}
-          </Grid>
-        </section>
+          <AccountGrid
+            accounts={githubUsers}
+            loading={loading}
+            placeholders={4}
+            label="Loading featured accounts"
+          />
+        </Section>
       </Page>
     </>
+  );
+}
+
+interface AccountGridProps {
+  /** GitHub users or organizations */
+  accounts: any[];
+  loading: boolean;
+  placeholders: number;
+  label: string;
+}
+
+function AccountGrid({ accounts, loading, placeholders, label }: AccountGridProps) {
+  return (
+    <Grid aria-busy={loading}>
+      {loading &&
+        Array.from({ length: placeholders }, (_, i) => (
+          <PlaceholderCard key={i}>
+            <LoadingBox style={{ width: 52, height: 52 }} />
+            <LoadingLines lines={3} label={label} />
+          </PlaceholderCard>
+        ))}
+      {accounts.map(u => (
+        <Card
+          key={u.id}
+          name={u.name || u.login}
+          // organizations have a description instead of a bio
+          desc={u.bio || u.description || `@${u.login}`}
+          img={u.avatar_url}
+          href={`/viewer/github/${u.login}`}
+        />
+      ))}
+    </Grid>
   );
 }
 
@@ -273,6 +319,12 @@ const Hint = styled.p`
   margin: 14px 0 0;
   font-size: 13px;
   color: var(--db-text-muted);
+`;
+
+const Section = styled.section`
+  & + & {
+    margin-top: 48px;
+  }
 `;
 
 const SectionTitle = styled.h2`
