@@ -15,7 +15,7 @@
     <title>docb</title>
 
     <script>
-      // Apply the color mode before first paint, see src/utils/colorMode.ts
+      // Apply the color mode and theme before first paint, see src/utils/colorMode.ts and theme.ts
       (function () {
         try {
           var mode = localStorage.getItem('docb:color-mode');
@@ -23,6 +23,10 @@
             mode === 'dark' ||
             (mode !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
           document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+          document.documentElement.setAttribute(
+            'data-theme',
+            localStorage.getItem('docb:theme') || 'indigo',
+          );
         } catch (e) {}
       })();
     </script>

@@ -1,8 +1,13 @@
 import { createGlobalStyle } from 'styled-components';
 
+import { DEFAULT_THEME, themes, tokensToCss } from './themes';
+
+const defaultTheme = themes.find(theme => theme.id === DEFAULT_THEME)!;
+
 /**
  * Design tokens. Components read colors, type and shape from these variables only,
- * so color modes and themes are a matter of redefining them.
+ * so color modes and themes are a matter of redefining them. Color values come from
+ * ./themes: the default theme on :root, the others on data-theme for each color mode.
  */
 export const GlobalStyle = createGlobalStyle`
   :root {
@@ -10,21 +15,7 @@ export const GlobalStyle = createGlobalStyle`
     --db-font-reading: 'Source Serif 4', Georgia, 'Times New Roman', serif;
     --db-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    --db-bg: #f7f6f3;
-    --db-surface: #ffffff;
-    --db-surface-muted: #f1efea;
-    --db-border: #e6e2da;
-    --db-border-strong: #d6d1c6;
-    --db-text: #1d1c21;
-    --db-text-muted: #6b6a73;
-    --db-heading: #121116;
-    --db-accent: #4f46e5;
-    --db-accent-hover: #4338ca;
-    --db-accent-soft: rgb(79 70 229 / 0.1);
-    --db-on-accent: #ffffff;
-    --db-skeleton: #e8e4dc;
-    --db-code-bg: #f2efe9;
-    --db-header-bg: rgb(247 246 243 / 0.82);
+    ${tokensToCss(defaultTheme.light)}
 
     --db-radius-lg: 16px;
     --db-radius: 10px;
@@ -37,26 +28,22 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   :root[data-bs-theme='dark'] {
-    --db-bg: #111114;
-    --db-surface: #18181c;
-    --db-surface-muted: #1f1f24;
-    --db-border: #2a2a31;
-    --db-border-strong: #3b3b44;
-    --db-text: #d6d5dc;
-    --db-text-muted: #9998a4;
-    --db-heading: #f4f3f8;
-    --db-accent: #8f89ff;
-    --db-accent-hover: #a9a4ff;
-    --db-accent-soft: rgb(143 137 255 / 0.15);
-    --db-on-accent: #13112a;
-    --db-skeleton: #27272e;
-    --db-code-bg: #1c1c22;
-    --db-header-bg: rgb(17 17 20 / 0.8);
+    ${tokensToCss(defaultTheme.dark)}
     --db-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
     --db-shadow-lg: 0 18px 40px -18px rgb(0 0 0 / 0.75);
 
     color-scheme: dark;
   }
+
+  ${themes
+    .filter(theme => theme.id !== DEFAULT_THEME)
+    .map(
+      theme => `
+        :root[data-theme='${theme.id}'][data-bs-theme='light'] { ${tokensToCss(theme.light)} }
+        :root[data-theme='${theme.id}'][data-bs-theme='dark'] { ${tokensToCss(theme.dark)} }
+      `,
+    )
+    .join('')}
 
   html,
   body {

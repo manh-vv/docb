@@ -29,9 +29,13 @@ export function resolveColorMode(mode: ColorMode, prefersDark: boolean): Resolve
 
 /** Bootstrap and the `--db-*` tokens both key off `data-bs-theme` on the root element */
 export function applyColorMode(resolved: ResolvedColorMode) {
-  const root = document.documentElement;
-  root.setAttribute('data-bs-theme', resolved);
-  const background = getComputedStyle(root).getPropertyValue('--db-bg').trim();
+  document.documentElement.setAttribute('data-bs-theme', resolved);
+  syncThemeColorMeta();
+}
+
+/** Match the browser UI color to the page background of the current mode and theme */
+export function syncThemeColorMeta() {
+  const background = getComputedStyle(document.documentElement).getPropertyValue('--db-bg').trim();
   if (background) {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', background);
   }

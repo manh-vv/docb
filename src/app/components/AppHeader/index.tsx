@@ -12,6 +12,7 @@ import { Link } from 'react-router';
 import styled from 'styled-components';
 
 import { ColorModeSwitch } from '../ColorModeSwitch';
+import { ThemePicker } from '../ThemePicker';
 
 interface Props {
   /** Breadcrumb entries after the brand, separated with a slash */
@@ -44,6 +45,7 @@ export const AppHeader = memo(({ crumbs = [], actions }: Props) => {
 
       <Actions>
         {actions}
+        <ThemePicker />
         <ColorModeSwitch />
       </Actions>
     </Bar>
