@@ -10,7 +10,7 @@ Docb is a frontend-only markdown reader: it lists a GitHub user's repositories, 
 
 Package manager is yarn 1 (`yarn.lock`). Node version is in `.nvmrc` (24; jsdom needs 24.15+).
 
-- `yarn start`: Vite dev server at `http://localhost:5173/docb/`
+- `yarn start` (or `yarn dev`): Vite dev server at `http://localhost:5173/docb/`
 - `yarn build`: production build into `build/` (also writes `build/404.html`, see Deployment)
 - `yarn preview`: serve the production build
 - `yarn test`: Vitest (jsdom, globals on), watch mode in a terminal. `yarn test --run` for a single run.
